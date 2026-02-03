@@ -350,9 +350,12 @@ module sui_in_space::missions {
         registry.total_rewards_distributed = registry.total_rewards_distributed + reward_amount;
         registry.active_missions = registry.active_missions - 1;
 
+        // Store mission ID before destruction
+        let mission_obj_id = object::id(&mission);
+
         // Create result
         let result = MissionResult {
-            mission_id: object::id(&mission),
+            mission_id: mission_obj_id,
             success,
             reward: reward_amount,
             experience: template.experience_reward,
@@ -374,7 +377,7 @@ module sui_in_space::missions {
         );
 
         event::emit(MissionCompleted {
-            mission_id: object::uid_to_inner(&id),
+            mission_id: mission_obj_id,
             player: tx_context::sender(ctx),
             success,
             reward: reward_amount,

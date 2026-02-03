@@ -2,8 +2,12 @@
  * Utility functions for Sui-In-Space
  */
 
+// Default epoch duration in milliseconds (configurable, default ~1 hour on Sui)
+const DEFAULT_EPOCH_DURATION_MS = 3600000;
+
 /**
  * Format a bigint balance with decimals
+ * Note: Always displays 2 decimal places for readability regardless of token decimals
  */
 export function formatBalance(balance: bigint, decimals: number = 9): string {
   const divisor = BigInt(10 ** decimals);
@@ -33,8 +37,15 @@ export function truncateAddress(address: string, start: number = 6, end: number 
 
 /**
  * Calculate time remaining until epoch
+ * Note: Epoch duration varies by blockchain configuration.
+ * Default assumes ~1 hour epochs as per Sui mainnet.
+ * Override epochDurationMs for different configurations.
  */
-export function getTimeRemaining(targetEpoch: number, currentEpoch: number, epochDurationMs: number = 3600000): {
+export function getTimeRemaining(
+  targetEpoch: number, 
+  currentEpoch: number, 
+  epochDurationMs: number = DEFAULT_EPOCH_DURATION_MS
+): {
   hours: number;
   minutes: number;
   seconds: number;
@@ -178,9 +189,11 @@ export function getStationTypeName(type: number): string {
 
 /**
  * Format epoch as human-readable time
+ * Note: Assumes each epoch is approximately 1 hour (configurable via DEFAULT_EPOCH_DURATION_MS).
+ * This is an approximation for display purposes only.
  */
 export function formatEpoch(epoch: number): string {
-  // Assuming each epoch is approximately 1 hour
-  const date = new Date(epoch * 3600000);
+  // Using configurable epoch duration
+  const date = new Date(epoch * (DEFAULT_EPOCH_DURATION_MS / 1000) * 1000);
   return date.toLocaleString();
 }

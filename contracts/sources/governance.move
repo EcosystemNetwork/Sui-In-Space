@@ -101,7 +101,7 @@ module sui_in_space::governance {
     // Default configuration
     const DEFAULT_VOTING_PERIOD: u64 = 72;        // 72 epochs (~3 days)
     const DEFAULT_EXECUTION_DELAY: u64 = 24;      // 24 epochs (~1 day)
-    const DEFAULT_PROPOSAL_THRESHOLD: u64 = 1000_000_000_000; // 1000 GALACTIC
+    const DEFAULT_PROPOSAL_THRESHOLD: u64 = 1000_000_000_000; // 1000 GALACTIC (with 9 decimals)
     const DEFAULT_QUORUM_THRESHOLD: u64 = 10;     // 10%
 
     // Voting power multipliers
@@ -109,10 +109,10 @@ module sui_in_space::governance {
     const AGENT_POWER_PER_LEVEL: u64 = 10;
     const TERRITORY_POWER_PER_PLANET: u64 = 100;
 
-    // Proposal costs by type
-    const COST_PARAMETER: u64 = 1000_000_000_000;     // 1000 GALACTIC
-    const COST_EMISSION: u64 = 10000_000_000_000;     // 10000 GALACTIC
-    const COST_FEATURE: u64 = 50000_000_000_000;      // 50000 GALACTIC
+    // Proposal costs by type (with 9 decimals)
+    const COST_PARAMETER: u64 = 1000_000_000_000;     // 1,000 GALACTIC
+    const COST_EMISSION: u64 = 10000_000_000_000;     // 10,000 GALACTIC
+    const COST_FEATURE: u64 = 50000_000_000_000;      // 50,000 GALACTIC
     const COST_WAR: u64 = 100000_000_000_000;         // 100000 GALACTIC
     const COST_UPGRADE: u64 = 500000_000_000_000;     // 500000 GALACTIC
 

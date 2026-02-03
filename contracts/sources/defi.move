@@ -467,7 +467,7 @@ module sui_in_space::defi {
         assert!(current_epoch <= policy.expires_at, EInsuranceExpired);
 
         // Calculate payout
-        let payout = (policy.insured_amount * pool.payout_rate_bps) / 10000;
+        let mut payout = (policy.insured_amount * pool.payout_rate_bps) / 10000;
         
         // Ensure pool has enough funds
         let available = balance::value(&pool.galactic_reserve);
