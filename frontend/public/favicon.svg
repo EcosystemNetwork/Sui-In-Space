@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Background circle with space gradient -->
+  <circle cx="16" cy="16" r="16" fill="url(#space-gradient)"/>
+  
+  <!-- Stars -->
+  <circle cx="6" cy="8" r="1" fill="white" opacity="0.8"/>
+  <circle cx="26" cy="6" r="0.8" fill="white" opacity="0.7"/>
+  <circle cx="28" cy="20" r="0.6" fill="white" opacity="0.6"/>
+  <circle cx="4" cy="24" r="0.7" fill="white" opacity="0.7"/>
+  
+  <!-- Stylized rocket/spaceship -->
+  <path d="M16 6 L20 14 L18 14 L18 22 L14 22 L14 14 L12 14 Z" fill="url(#rocket-gradient)"/>
+  
+  <!-- Rocket window -->
+  <circle cx="16" cy="12" r="2" fill="#4FC3DC"/>
+  
+  <!-- Rocket flames -->
+  <path d="M14 22 L16 28 L18 22 Z" fill="url(#flame-gradient)"/>
+  
+  <!-- Sui logo hint - water drop shape -->
+  <ellipse cx="16" cy="12" rx="1.2" ry="1.5" fill="#6FBCF0" opacity="0.8"/>
+  
+  <defs>
+    <linearGradient id="space-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <linearGradient id="rocket-gradient" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#e0e0e0"/>
+      <stop offset="100%" stop-color="#a0a0a0"/>
+    </linearGradient>
+    <linearGradient id="flame-gradient" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#ff6b35"/>
+      <stop offset="50%" stop-color="#f7931e"/>
+      <stop offset="100%" stop-color="#ffcc00"/>
+    </linearGradient>
+  </defs>
+</svg>
