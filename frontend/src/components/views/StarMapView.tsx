@@ -218,7 +218,7 @@ export const StarMapView: React.FC = () => {
                 }`}
                 style={{ left: `${system.x}%`, top: `${system.y}%`, opacity: 0 }}
               >
-                <div className={`relative ${system.playerOwned ? '' : ''}`}>
+                <div className="relative">
                   <div
                     className={`w-4 h-4 rounded-full ${TYPE_COLORS[system.type]} ${
                       selectedSystem?.id === system.id ? 'ring-2 ring-cyan-400 ring-offset-2 ring-offset-slate-900' : ''

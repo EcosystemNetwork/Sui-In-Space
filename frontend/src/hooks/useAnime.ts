@@ -269,7 +269,7 @@ export function useProgressAnimation(
 export function useCounterAnimation(
   targetValue: number,
   duration: number = 1500,
-  formatFn: (value: number) => string = (v) => Math.floor(v).toLocaleString()
+  formatFn: (value: number) => string = (value) => Math.floor(value).toLocaleString()
 ) {
   const elementRef = useRef<HTMLElement>(null);
   const currentValue = useRef({ value: 0 });
