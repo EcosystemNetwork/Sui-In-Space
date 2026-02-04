@@ -143,13 +143,23 @@ const MISSION_TYPE_NAMES: Record<MissionType, string> = {
   [MissionType.Exploration]: 'Exploration',
 };
 
-const MISSION_TYPE_COLORS: Record<MissionType, string> = {
-  [MissionType.DataHeist]: 'cyan',
-  [MissionType.Espionage]: 'purple',
-  [MissionType.Smuggling]: 'yellow',
-  [MissionType.AITraining]: 'blue',
-  [MissionType.Combat]: 'red',
-  [MissionType.Exploration]: 'green',
+// Pre-defined complete class strings for Tailwind JIT
+const MISSION_BUTTON_ACTIVE_CLASSES: Record<MissionType, string> = {
+  [MissionType.DataHeist]: 'bg-cyan-500/30 text-cyan-400 border border-cyan-500/50',
+  [MissionType.Espionage]: 'bg-purple-500/30 text-purple-400 border border-purple-500/50',
+  [MissionType.Smuggling]: 'bg-yellow-500/30 text-yellow-400 border border-yellow-500/50',
+  [MissionType.AITraining]: 'bg-blue-500/30 text-blue-400 border border-blue-500/50',
+  [MissionType.Combat]: 'bg-red-500/30 text-red-400 border border-red-500/50',
+  [MissionType.Exploration]: 'bg-green-500/30 text-green-400 border border-green-500/50',
+};
+
+const MISSION_CARD_SELECTED_CLASSES: Record<MissionType, string> = {
+  [MissionType.DataHeist]: 'border-cyan-400 shadow-lg shadow-cyan-400/20',
+  [MissionType.Espionage]: 'border-purple-400 shadow-lg shadow-purple-400/20',
+  [MissionType.Smuggling]: 'border-yellow-400 shadow-lg shadow-yellow-400/20',
+  [MissionType.AITraining]: 'border-blue-400 shadow-lg shadow-blue-400/20',
+  [MissionType.Combat]: 'border-red-400 shadow-lg shadow-red-400/20',
+  [MissionType.Exploration]: 'border-green-400 shadow-lg shadow-green-400/20',
 };
 
 export const MissionsView: React.FC = () => {
@@ -248,32 +258,34 @@ export const MissionsView: React.FC = () => {
         >
           All Types
         </button>
-        {Object.entries(MISSION_TYPE_NAMES).map(([type, name]) => (
-          <button
-            key={type}
-            onClick={() => setFilterType(Number(type) as MissionType)}
-            className={`px-3 py-1.5 rounded text-xs ${
-              filterType === Number(type)
-                ? `bg-${MISSION_TYPE_COLORS[Number(type) as MissionType]}-500/30 text-${MISSION_TYPE_COLORS[Number(type) as MissionType]}-400 border border-${MISSION_TYPE_COLORS[Number(type) as MissionType]}-500/50`
-                : 'bg-slate-700/50 text-slate-400 hover:text-white'
-            }`}
-          >
-            {MISSION_TYPE_ICONS[Number(type) as MissionType]} {name}
-          </button>
-        ))}
+        {Object.entries(MISSION_TYPE_NAMES).map(([type, name]) => {
+          const missionType = Number(type) as MissionType;
+          return (
+            <button
+              key={type}
+              onClick={() => setFilterType(missionType)}
+              className={`px-3 py-1.5 rounded text-xs ${
+                filterType === missionType
+                  ? MISSION_BUTTON_ACTIVE_CLASSES[missionType]
+                  : 'bg-slate-700/50 text-slate-400 hover:text-white'
+              }`}
+            >
+              {MISSION_TYPE_ICONS[missionType]} {name}
+            </button>
+          );
+        })}
       </div>
 
       {/* Available Missions Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredMissions.map((mission) => {
-          const color = MISSION_TYPE_COLORS[mission.type];
           return (
             <div
               key={mission.id}
               onClick={() => setSelectedMission(selectedMission?.id === mission.id ? null : mission)}
               className={`p-4 rounded-lg bg-slate-900/80 border cursor-pointer transition-all ${
                 selectedMission?.id === mission.id
-                  ? `border-${color}-400 shadow-lg shadow-${color}-400/20`
+                  ? MISSION_CARD_SELECTED_CLASSES[mission.type]
                   : 'border-slate-700 hover:border-slate-600'
               }`}
             >

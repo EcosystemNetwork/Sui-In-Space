@@ -219,15 +219,15 @@ export const HangarView: React.FC = () => {
             <h3 className="text-lg font-bold text-white mb-4">Module Shop</h3>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {[
-                { type: 'Hull', icon: '🛡️', color: 'green' },
-                { type: 'Engine', icon: '⚡', color: 'blue' },
-                { type: 'AI Core', icon: '🧠', color: 'purple' },
-                { type: 'Weapon', icon: '🔫', color: 'red' },
-                { type: 'Utility', icon: '🔧', color: 'cyan' },
+                { type: 'Hull', icon: '🛡️', className: 'bg-green-500/10 border-green-500/30 hover:bg-green-500/20' },
+                { type: 'Engine', icon: '⚡', className: 'bg-blue-500/10 border-blue-500/30 hover:bg-blue-500/20' },
+                { type: 'AI Core', icon: '🧠', className: 'bg-purple-500/10 border-purple-500/30 hover:bg-purple-500/20' },
+                { type: 'Weapon', icon: '🔫', className: 'bg-red-500/10 border-red-500/30 hover:bg-red-500/20' },
+                { type: 'Utility', icon: '🔧', className: 'bg-cyan-500/10 border-cyan-500/30 hover:bg-cyan-500/20' },
               ].map((module) => (
                 <button
                   key={module.type}
-                  className={`p-3 rounded-lg bg-${module.color}-500/10 border border-${module.color}-500/30 hover:bg-${module.color}-500/20 transition-all`}
+                  className={`p-3 rounded-lg border transition-all ${module.className}`}
                 >
                   <div className="text-2xl mb-1">{module.icon}</div>
                   <div className="text-sm text-white">{module.type}</div>
