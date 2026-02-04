@@ -117,6 +117,30 @@ pnpm install
 pnpm dev
 ```
 
+## 🚀 Deployment on Vercel
+
+The project is configured for deployment on Vercel. The `vercel.json` file is set up to:
+- Build the frontend from the `frontend/` directory
+- Output to `frontend/dist` (Vite's default output)
+- Handle SPA routing with rewrites
+
+### Deployment TODO Checklist
+
+To get everything working on Vercel:
+
+- [ ] **Connect Repository**: Link your GitHub repository to Vercel
+- [ ] **Environment Variables**: Set up any required environment variables:
+  - `VITE_SUI_NETWORK` - The Sui network to connect to (e.g., `mainnet`, `testnet`, `devnet`)
+  - `VITE_PACKAGE_ID` - The deployed Move package ID (once contracts are deployed)
+- [ ] **Deploy Contracts**: Deploy Move smart contracts to Sui network
+  - Run `cd contracts && sui move build` to build contracts
+  - Deploy using `sui client publish --gas-budget <BUDGET>` (adjust gas budget based on contract size; see [Sui Gas Docs](https://docs.sui.io/concepts/tokenomics/gas-in-sui))
+  - Update frontend with the deployed package IDs
+- [ ] **Configure Wallet Integration**: Set up Sui wallet connection
+- [ ] **Set Up Indexing**: Configure real-time object state indexing for game data
+- [ ] **Test Deployment**: Verify all features work on the deployed site
+- [ ] **Custom Domain** (optional): Configure a custom domain in Vercel settings
+
 ## 📄 License
 
 MIT License - See [LICENSE](LICENSE) for details.
