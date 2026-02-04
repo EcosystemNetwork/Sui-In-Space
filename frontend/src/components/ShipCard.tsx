@@ -5,7 +5,7 @@ import type { Ship, ShipClass } from '../types';
 /**
  * Ship Card Component
  * Displays ship information with holographic UI styling
- * Enhanced with anime.js animations
+ * Enhanced with anime.js animations and futuristic sci-fi HUD design
  */
 
 interface ShipCardProps {
@@ -79,7 +79,7 @@ export const ShipCard: React.FC<ShipCardProps> = ({ ship, isSelected, onClick })
         // Animate corners glow
         anime({
           targets: cornersRef.current,
-          borderColor: ['rgba(96, 165, 250, 0.5)', 'rgba(96, 165, 250, 1)'],
+          borderColor: ['rgba(0, 128, 255, 0.5)', 'rgba(0, 128, 255, 1)'],
           duration: 300,
           easing: 'easeOutCubic',
         });
@@ -133,36 +133,37 @@ export const ShipCard: React.FC<ShipCardProps> = ({ ship, isSelected, onClick })
       ref={cardRef}
       className={`
         relative p-4 rounded-lg border cursor-pointer
-        bg-gradient-to-br from-slate-900/90 to-slate-800/90
+        bg-gradient-to-br from-[#001020]/95 to-[#000a14]/90
         ${isSelected 
-          ? 'border-blue-400 shadow-lg shadow-blue-400/20' 
-          : 'border-slate-700 hover:border-blue-400/50'
+          ? 'border-[#0080ff] shadow-[0_0_20px_rgba(0,128,255,0.3)]' 
+          : 'border-[#0080ff]/30 hover:border-[#0080ff]/60'
         }
+        transition-all duration-300
       `}
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Holographic corner accents */}
-      <div ref={el => { if (el) cornersRef.current[0] = el; }} className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-blue-400 rounded-tl" />
-      <div ref={el => { if (el) cornersRef.current[1] = el; }} className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-blue-400 rounded-tr" />
-      <div ref={el => { if (el) cornersRef.current[2] = el; }} className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-blue-400 rounded-bl" />
-      <div ref={el => { if (el) cornersRef.current[3] = el; }} className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-blue-400 rounded-br" />
+      {/* HUD corner accents */}
+      <div ref={el => { if (el) cornersRef.current[0] = el; }} className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-[#0080ff]/60 rounded-tl" />
+      <div ref={el => { if (el) cornersRef.current[1] = el; }} className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-[#0080ff]/60 rounded-tr" />
+      <div ref={el => { if (el) cornersRef.current[2] = el; }} className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-[#0080ff]/60 rounded-bl" />
+      <div ref={el => { if (el) cornersRef.current[3] = el; }} className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-[#0080ff]/60 rounded-br" />
 
       {/* Header */}
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-2">
           <span className="text-2xl">{CLASS_ICONS[ship.shipClass]}</span>
           <div>
-            <h3 className="text-lg font-bold text-white">{ship.name}</h3>
-            <p className="text-sm text-blue-400">{CLASS_NAMES[ship.shipClass]}</p>
+            <h3 className="text-lg font-display font-bold text-[#e0f7ff]">{ship.name}</h3>
+            <p className="text-sm text-[#0080ff] font-semibold">{CLASS_NAMES[ship.shipClass]}</p>
           </div>
         </div>
         <div className="text-right">
-          <div className="text-lg font-bold text-orange-400">
+          <div className="text-lg font-display font-bold text-[#ff9500]">
             ⚔️ {combatRating}
           </div>
-          <div className="text-xs text-slate-400">Combat Rating</div>
+          <div className="text-xs text-[#00f0ff]/50 font-mono">COMBAT RATING</div>
         </div>
       </div>
 
@@ -170,16 +171,16 @@ export const ShipCard: React.FC<ShipCardProps> = ({ ship, isSelected, onClick })
       <div className="space-y-2 mb-3">
         <div>
           <div className="flex justify-between text-xs mb-1">
-            <span className="text-slate-400">Hull Integrity</span>
-            <span className={healthPercentage < 30 ? 'text-red-400' : 'text-green-400'}>
+            <span className="text-[#00f0ff]/50 font-mono">HULL INTEGRITY</span>
+            <span className={`font-display font-bold ${healthPercentage < 30 ? 'text-[#ff2d55]' : 'text-[#00ff9d]'}`}>
               {ship.currentHealth}/{ship.maxHealth}
             </span>
           </div>
-          <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-[#001a30] rounded-full overflow-hidden border border-[#00f0ff]/20">
             <div 
               ref={healthBarRef}
               className={`h-full rounded-full ${
-                healthPercentage < 30 ? 'bg-red-500' : healthPercentage < 60 ? 'bg-yellow-500' : 'bg-green-500'
+                healthPercentage < 30 ? 'bg-[#ff2d55]' : healthPercentage < 60 ? 'bg-[#ffd60a]' : 'bg-[#00ff9d]'
               }`}
               style={{ width: '0%' }}
             />
@@ -188,16 +189,16 @@ export const ShipCard: React.FC<ShipCardProps> = ({ ship, isSelected, onClick })
 
         <div>
           <div className="flex justify-between text-xs mb-1">
-            <span className="text-slate-400">Fuel</span>
-            <span className={fuelPercentage < 20 ? 'text-red-400' : 'text-cyan-400'}>
+            <span className="text-[#00f0ff]/50 font-mono">FUEL</span>
+            <span className={`font-display font-bold ${fuelPercentage < 20 ? 'text-[#ff2d55]' : 'text-[#00f0ff]'}`}>
               {ship.fuel}/{ship.maxFuel}
             </span>
           </div>
-          <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-[#001a30] rounded-full overflow-hidden border border-[#00f0ff]/20">
             <div 
               ref={fuelBarRef}
               className={`h-full rounded-full ${
-                fuelPercentage < 20 ? 'bg-red-500' : 'bg-cyan-500'
+                fuelPercentage < 20 ? 'bg-[#ff2d55]' : 'bg-[#00f0ff]'
               }`}
               style={{ width: '0%' }}
             />
@@ -208,26 +209,26 @@ export const ShipCard: React.FC<ShipCardProps> = ({ ship, isSelected, onClick })
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm mb-3">
         <div className="flex justify-between">
-          <span className="text-slate-400">Speed</span>
-          <span className="text-white">{ship.speed}</span>
+          <span className="text-[#00f0ff]/50 font-mono text-xs">SPEED</span>
+          <span className="text-[#e0f7ff] font-display font-bold">{ship.speed}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-slate-400">Firepower</span>
-          <span className="text-orange-400">{ship.firepower}</span>
+          <span className="text-[#00f0ff]/50 font-mono text-xs">FIREPOWER</span>
+          <span className="text-[#ff9500] font-display font-bold">{ship.firepower}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-slate-400">Cargo</span>
-          <span className="text-white">{ship.cargoCapacity}</span>
+          <span className="text-[#00f0ff]/50 font-mono text-xs">CARGO</span>
+          <span className="text-[#e0f7ff] font-display font-bold">{ship.cargoCapacity}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-slate-400">Efficiency</span>
-          <span className="text-green-400">{ship.fuelEfficiency}%</span>
+          <span className="text-[#00f0ff]/50 font-mono text-xs">EFFICIENCY</span>
+          <span className="text-[#00ff9d] font-display font-bold">{ship.fuelEfficiency}%</span>
         </div>
       </div>
 
       {/* Module Slots */}
-      <div className="border-t border-slate-700 pt-2 mb-2">
-        <div className="text-xs text-slate-400 mb-1">Modules</div>
+      <div className="border-t border-[#00f0ff]/20 pt-2 mb-2">
+        <div className="text-xs text-[#00f0ff]/50 mb-1 font-mono">MODULES</div>
         <div className="flex gap-1">
           <ModuleSlot label="H" filled={!!ship.modules.hull} />
           <ModuleSlot label="E" filled={!!ship.modules.engine} />
@@ -238,25 +239,25 @@ export const ShipCard: React.FC<ShipCardProps> = ({ ship, isSelected, onClick })
       </div>
 
       {/* Crew & Status */}
-      <div className="flex justify-between items-center pt-2 border-t border-slate-700">
-        <div className="text-xs">
-          <span className="text-slate-400">Crew: </span>
-          <span className="text-white">{ship.crew.length}/{ship.maxCrew}</span>
-          {ship.pilot && <span className="text-green-400 ml-2">● Piloted</span>}
+      <div className="flex justify-between items-center pt-2 border-t border-[#00f0ff]/20">
+        <div className="text-xs font-mono">
+          <span className="text-[#00f0ff]/50">CREW: </span>
+          <span className="text-[#e0f7ff]">{ship.crew.length}/{ship.maxCrew}</span>
+          {ship.pilot && <span className="text-[#00ff9d] ml-2">● PILOTED</span>}
         </div>
         <div className="flex gap-2">
           {ship.isDocked && (
-            <span className="px-2 py-0.5 text-xs rounded bg-blue-500/20 text-blue-400 border border-blue-500/50">
+            <span className="px-2 py-0.5 text-xs rounded bg-[#0080ff]/10 text-[#0080ff] border border-[#0080ff]/50 font-mono">
               DOCKED
             </span>
           )}
           {ship.inCombat && (
-            <span className="px-2 py-0.5 text-xs rounded bg-red-500/20 text-red-400 border border-red-500/50 animate-pulse">
+            <span className="px-2 py-0.5 text-xs rounded bg-[#ff2d55]/10 text-[#ff2d55] border border-[#ff2d55]/50 animate-pulse font-mono">
               COMBAT
             </span>
           )}
           {ship.currentHealth === 0 && (
-            <span className="px-2 py-0.5 text-xs rounded bg-red-500/20 text-red-400 border border-red-500/50">
+            <span className="px-2 py-0.5 text-xs rounded bg-[#ff2d55]/10 text-[#ff2d55] border border-[#ff2d55]/50 font-mono">
               DESTROYED
             </span>
           )}
@@ -274,10 +275,10 @@ interface ModuleSlotProps {
 const ModuleSlot: React.FC<ModuleSlotProps> = ({ label, filled }) => (
   <div 
     className={`
-      w-8 h-8 flex items-center justify-center rounded text-xs font-bold
+      w-8 h-8 flex items-center justify-center rounded text-xs font-mono font-bold
       ${filled 
-        ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50' 
-        : 'bg-slate-700/50 text-slate-500 border border-slate-600'
+        ? 'bg-[#00f0ff]/10 text-[#00f0ff] border border-[#00f0ff]/50' 
+        : 'bg-[#001a30]/50 text-[#00f0ff]/30 border border-[#00f0ff]/20'
       }
     `}
   >

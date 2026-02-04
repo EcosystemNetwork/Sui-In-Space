@@ -5,7 +5,7 @@ import type { Agent, AgentClass, AgentType } from '../types';
 /**
  * Agent Card Component
  * Displays agent information with holographic UI styling
- * Enhanced with anime.js animations
+ * Enhanced with anime.js animations and futuristic sci-fi HUD design
  */
 
 interface AgentCardProps {
@@ -31,12 +31,12 @@ const TYPE_NAMES: Record<AgentType, string> = {
 };
 
 const CLASS_COLORS: Record<AgentClass, string> = {
-  0: 'text-cyan-400',
-  1: 'text-blue-400',
-  2: 'text-orange-400',
-  3: 'text-purple-400',
-  4: 'text-pink-400',
-  5: 'text-red-400',
+  0: 'text-[#00f0ff]',
+  1: 'text-[#0080ff]',
+  2: 'text-[#ff9500]',
+  3: 'text-[#bf5af2]',
+  4: 'text-[#ff2d55]',
+  5: 'text-[#ff2d55]',
 };
 
 export const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, onClick }) => {
@@ -74,7 +74,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, onClick
         });
         anime({
           targets: cornersRef.current,
-          borderColor: ['rgba(34, 211, 238, 0.5)', 'rgba(34, 211, 238, 1)'],
+          borderColor: ['rgba(0, 240, 255, 0.5)', 'rgba(0, 240, 255, 1)'],
           duration: 300,
           easing: 'easeOutCubic',
         });
@@ -128,38 +128,39 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, onClick
       ref={cardRef}
       className={`
         relative p-4 rounded-lg border cursor-pointer
-        bg-gradient-to-br from-slate-900/90 to-slate-800/90
+        bg-gradient-to-br from-[#001020]/95 to-[#000a14]/90
         ${isSelected 
-          ? 'border-cyan-400 shadow-lg shadow-cyan-400/20' 
-          : 'border-slate-700 hover:border-cyan-400/50'
+          ? 'border-[#00f0ff] shadow-[0_0_20px_rgba(0,240,255,0.3)]' 
+          : 'border-[#00f0ff]/30 hover:border-[#00f0ff]/60'
         }
+        transition-all duration-300
       `}
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Holographic corner accents */}
-      <div ref={el => { if (el) cornersRef.current[0] = el; }} className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-cyan-400 rounded-tl" />
-      <div ref={el => { if (el) cornersRef.current[1] = el; }} className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-cyan-400 rounded-tr" />
-      <div ref={el => { if (el) cornersRef.current[2] = el; }} className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-cyan-400 rounded-bl" />
-      <div ref={el => { if (el) cornersRef.current[3] = el; }} className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-cyan-400 rounded-br" />
+      {/* HUD corner accents */}
+      <div ref={el => { if (el) cornersRef.current[0] = el; }} className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-[#00f0ff]/60 rounded-tl" />
+      <div ref={el => { if (el) cornersRef.current[1] = el; }} className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-[#00f0ff]/60 rounded-tr" />
+      <div ref={el => { if (el) cornersRef.current[2] = el; }} className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-[#00f0ff]/60 rounded-bl" />
+      <div ref={el => { if (el) cornersRef.current[3] = el; }} className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-[#00f0ff]/60 rounded-br" />
 
       {/* Header */}
       <div className="flex justify-between items-start mb-3">
         <div>
-          <h3 className="text-lg font-bold text-white">{agent.name}</h3>
-          <p className={`text-sm ${CLASS_COLORS[agent.class]}`}>
+          <h3 className="text-lg font-display font-bold text-[#e0f7ff]">{agent.name}</h3>
+          <p className={`text-sm font-semibold ${CLASS_COLORS[agent.class]}`}>
             {CLASS_NAMES[agent.class]}
           </p>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-[#00f0ff]/50 font-mono">
             {TYPE_NAMES[agent.agentType]}
           </p>
         </div>
         <div className="text-right">
-          <div className="text-2xl font-bold text-cyan-400">
+          <div className="text-2xl font-display font-bold text-[#00f0ff]">
             Lv.{agent.level}
           </div>
-          <div className="text-xs text-slate-400">
+          <div className="text-xs text-[#00f0ff]/50 font-mono">
             {agent.experience.toLocaleString()} XP
           </div>
         </div>
@@ -176,25 +177,25 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, onClick
       </div>
 
       {/* Combat Power */}
-      <div className="flex justify-between items-center pt-2 border-t border-slate-700">
-        <span className="text-xs text-slate-400">Combat Power</span>
-        <span className="text-lg font-bold text-orange-400">{combatPower}</span>
+      <div className="flex justify-between items-center pt-2 border-t border-[#00f0ff]/20">
+        <span className="text-xs text-[#00f0ff]/50 font-mono">COMBAT POWER</span>
+        <span className="text-lg font-display font-bold text-[#ff9500]">{combatPower}</span>
       </div>
 
       {/* Status Indicators */}
       <div className="flex gap-2 mt-2">
         {agent.isStaked && (
-          <span className="px-2 py-0.5 text-xs rounded bg-green-500/20 text-green-400 border border-green-500/50">
+          <span className="px-2 py-0.5 text-xs rounded bg-[#00ff9d]/10 text-[#00ff9d] border border-[#00ff9d]/50 font-mono">
             STAKED
           </span>
         )}
         {agent.currentMission && (
-          <span className="px-2 py-0.5 text-xs rounded bg-blue-500/20 text-blue-400 border border-blue-500/50">
+          <span className="px-2 py-0.5 text-xs rounded bg-[#0080ff]/10 text-[#0080ff] border border-[#0080ff]/50 font-mono">
             ON MISSION
           </span>
         )}
         {agent.augmentSlots.length > 0 && (
-          <span className="px-2 py-0.5 text-xs rounded bg-purple-500/20 text-purple-400 border border-purple-500/50">
+          <span className="px-2 py-0.5 text-xs rounded bg-[#bf5af2]/10 text-[#bf5af2] border border-[#bf5af2]/50 font-mono">
             {agent.augmentSlots.length} AUG
           </span>
         )}
@@ -210,12 +211,12 @@ interface StatBarProps {
 }
 
 const STAT_COLORS = {
-  cyan: 'bg-cyan-400',
-  blue: 'bg-blue-400',
-  orange: 'bg-orange-400',
-  green: 'bg-green-400',
-  yellow: 'bg-yellow-400',
-  purple: 'bg-purple-400',
+  cyan: 'bg-[#00f0ff]',
+  blue: 'bg-[#0080ff]',
+  orange: 'bg-[#ff9500]',
+  green: 'bg-[#00ff9d]',
+  yellow: 'bg-[#ffd60a]',
+  purple: 'bg-[#bf5af2]',
 };
 
 const StatBar: React.FC<StatBarProps> = ({ label, value, color }) => {
@@ -223,15 +224,15 @@ const StatBar: React.FC<StatBarProps> = ({ label, value, color }) => {
   
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs text-slate-400 w-8">{label}</span>
-      <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
+      <span className="text-xs text-[#00f0ff]/50 w-8 font-mono">{label}</span>
+      <div className="flex-1 h-1.5 bg-[#001a30] rounded-full overflow-hidden border border-[#00f0ff]/20">
         <div 
           className={`stat-bar-fill h-full ${STAT_COLORS[color]} rounded-full`}
           style={{ width: '0%' }}
           data-width={`${percentage}%`}
         />
       </div>
-      <span className="text-xs text-white w-6 text-right">{value}</span>
+      <span className="text-xs text-[#e0f7ff] w-6 text-right font-display font-bold">{value}</span>
     </div>
   );
 };
