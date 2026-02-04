@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import anime from 'animejs';
 import { ProposalType, ProposalStatus } from '../../types';
 
 /**
  * Governance View Component
  * DAO voting and proposals
+ * Enhanced with anime.js animations
  */
 
 interface DemoProposal {
@@ -135,11 +137,76 @@ export const GovernanceView: React.FC = () => {
     territoryPower: 15000,
     totalPower: 90000,
   };
+  
+  const headerRef = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  
+  // Initial entrance animations
+  useEffect(() => {
+    if (headerRef.current) {
+      anime({
+        targets: headerRef.current,
+        translateY: [-20, 0],
+        opacity: [0, 1],
+        duration: 600,
+        easing: 'easeOutCubic',
+      });
+    }
+    
+    if (statsRef.current) {
+      const statCards = statsRef.current.querySelectorAll('.stat-card');
+      anime({
+        targets: statCards,
+        translateY: [20, 0],
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(80, { start: 200 }),
+        easing: 'easeOutCubic',
+      });
+    }
+  }, []);
+  
+  // Animate content when tab changes
+  useEffect(() => {
+    if (contentRef.current) {
+      anime({
+        targets: contentRef.current,
+        translateY: [30, 0],
+        opacity: [0, 1],
+        duration: 500,
+        easing: 'easeOutCubic',
+      });
+      
+      const items = contentRef.current.querySelectorAll('.animated-item');
+      anime({
+        targets: items,
+        translateY: [20, 0],
+        opacity: [0, 1],
+        duration: 400,
+        delay: anime.stagger(80, { start: 200 }),
+        easing: 'easeOutCubic',
+      });
+      
+      // Animate vote progress bars
+      const progressBars = contentRef.current.querySelectorAll('.vote-progress');
+      progressBars.forEach((bar, index) => {
+        const width = bar.getAttribute('data-width');
+        anime({
+          targets: bar,
+          width: ['0%', width || '0%'],
+          duration: 800,
+          delay: 400 + index * 100,
+          easing: 'easeOutCubic',
+        });
+      });
+    }
+  }, [activeTab, filterStatus]);
 
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div ref={headerRef} className="flex justify-between items-center" style={{ opacity: 0 }}>
         <h2 className="text-2xl font-bold text-white flex items-center gap-2">
           <span className="text-purple-400">🏛️</span>
           Galactic Governance
@@ -162,22 +229,22 @@ export const GovernanceView: React.FC = () => {
       </div>
 
       {/* Governance Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
+      <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="stat-card p-3 rounded-lg bg-purple-500/10 border border-purple-500/30" style={{ opacity: 0 }}>
           <div className="text-2xl font-bold text-purple-400">{DEMO_PROPOSALS.length}</div>
           <div className="text-xs text-slate-400">Total Proposals</div>
         </div>
-        <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+        <div className="stat-card p-3 rounded-lg bg-green-500/10 border border-green-500/30" style={{ opacity: 0 }}>
           <div className="text-2xl font-bold text-green-400">
             {DEMO_PROPOSALS.filter(p => p.status === ProposalStatus.Active).length}
           </div>
           <div className="text-xs text-slate-400">Active Voting</div>
         </div>
-        <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
+        <div className="stat-card p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30" style={{ opacity: 0 }}>
           <div className="text-2xl font-bold text-cyan-400">{(votingPower.totalPower / 1000).toFixed(0)}K</div>
           <div className="text-xs text-slate-400">Your Voting Power</div>
         </div>
-        <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/30">
+        <div className="stat-card p-3 rounded-lg bg-orange-500/10 border border-orange-500/30" style={{ opacity: 0 }}>
           <div className="text-2xl font-bold text-orange-400">
             {DEMO_PROPOSALS.filter(p => p.status === ProposalStatus.Executed).length}
           </div>
@@ -186,9 +253,9 @@ export const GovernanceView: React.FC = () => {
       </div>
 
       {activeTab === 'proposals' && (
-        <>
+        <div ref={contentRef} style={{ opacity: 0 }}>
           {/* Status Filter */}
-          <div className="flex flex-wrap gap-2">
+          <div className="animated-item flex flex-wrap gap-2" style={{ opacity: 0 }}>
             <button
               onClick={() => setFilterStatus(null)}
               className={`px-3 py-1.5 rounded text-xs ${
@@ -215,7 +282,7 @@ export const GovernanceView: React.FC = () => {
           </div>
 
           {/* Proposals List */}
-          <div className="space-y-4">
+          <div className="space-y-4 mt-4">
             {filteredProposals.map((proposal) => {
               const totalVotes = proposal.votesFor + proposal.votesAgainst;
               const forPercentage = totalVotes > 0 ? (proposal.votesFor / totalVotes) * 100 : 0;
@@ -225,11 +292,12 @@ export const GovernanceView: React.FC = () => {
                 <div
                   key={proposal.id}
                   onClick={() => setSelectedProposal(selectedProposal?.id === proposal.id ? null : proposal)}
-                  className={`p-4 rounded-lg bg-slate-900/80 border cursor-pointer transition-all ${
+                  className={`animated-item p-4 rounded-lg bg-slate-900/80 border cursor-pointer ${
                     selectedProposal?.id === proposal.id
                       ? 'border-purple-400 shadow-lg shadow-purple-400/20'
                       : 'border-slate-700 hover:border-slate-600'
                   }`}
+                  style={{ opacity: 0 }}
                 >
                   {/* Header */}
                   <div className="flex justify-between items-start mb-3">
@@ -262,12 +330,14 @@ export const GovernanceView: React.FC = () => {
                     </div>
                     <div className="h-3 bg-slate-700 rounded-full overflow-hidden flex">
                       <div
-                        className="h-full bg-green-500"
-                        style={{ width: `${forPercentage}%` }}
+                        className="vote-progress h-full bg-green-500"
+                        data-width={`${forPercentage}%`}
+                        style={{ width: '0%' }}
                       />
                       <div
-                        className="h-full bg-red-500"
-                        style={{ width: `${100 - forPercentage}%` }}
+                        className="vote-progress h-full bg-red-500"
+                        data-width={`${100 - forPercentage}%`}
+                        style={{ width: '0%' }}
                       />
                     </div>
                     {proposal.quorumReached && (
@@ -300,12 +370,12 @@ export const GovernanceView: React.FC = () => {
               );
             })}
           </div>
-        </>
+        </div>
       )}
 
       {activeTab === 'create' && (
-        <div className="max-w-2xl mx-auto">
-          <div className="p-6 rounded-lg bg-slate-900/80 border border-slate-700">
+        <div ref={contentRef} className="max-w-2xl mx-auto" style={{ opacity: 0 }}>
+          <div className="animated-item p-6 rounded-lg bg-slate-900/80 border border-slate-700" style={{ opacity: 0 }}>
             <h3 className="text-lg font-bold text-white mb-4">Create New Proposal</h3>
 
             <div className="space-y-4">
@@ -380,8 +450,8 @@ export const GovernanceView: React.FC = () => {
       )}
 
       {activeTab === 'power' && (
-        <div className="max-w-2xl mx-auto">
-          <div className="p-6 rounded-lg bg-slate-900/80 border border-slate-700">
+        <div ref={contentRef} className="max-w-2xl mx-auto" style={{ opacity: 0 }}>
+          <div className="animated-item p-6 rounded-lg bg-slate-900/80 border border-slate-700" style={{ opacity: 0 }}>
             <h3 className="text-lg font-bold text-white mb-4">Your Voting Power</h3>
 
             <div className="space-y-4">

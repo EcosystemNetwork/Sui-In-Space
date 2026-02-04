@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import anime from 'animejs';
 import { StationType } from '../../types';
 
 /**
  * DeFi View Component
  * Staking, liquidity pools, yield farming (Station Hub)
+ * Enhanced with anime.js animations
  */
 
 interface DemoStation {
@@ -124,11 +126,63 @@ export const DefiView: React.FC = () => {
   const totalStakedByPlayer = DEMO_STATIONS.reduce((sum, s) => sum + s.playerStake, 0);
   const totalPendingRewards = DEMO_STATIONS.reduce((sum, s) => sum + s.pendingRewards, 0);
   const totalLPValue = DEMO_POOLS.reduce((sum, p) => sum + p.playerLP, 0);
+  
+  const headerRef = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  
+  // Initial entrance animations
+  useEffect(() => {
+    if (headerRef.current) {
+      anime({
+        targets: headerRef.current,
+        translateY: [-20, 0],
+        opacity: [0, 1],
+        duration: 600,
+        easing: 'easeOutCubic',
+      });
+    }
+    
+    if (statsRef.current) {
+      const statCards = statsRef.current.querySelectorAll('.stat-card');
+      anime({
+        targets: statCards,
+        translateY: [20, 0],
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(80, { start: 200 }),
+        easing: 'easeOutCubic',
+      });
+    }
+  }, []);
+  
+  // Animate content when tab changes
+  useEffect(() => {
+    if (contentRef.current) {
+      anime({
+        targets: contentRef.current,
+        translateY: [30, 0],
+        opacity: [0, 1],
+        duration: 500,
+        easing: 'easeOutCubic',
+      });
+      
+      const items = contentRef.current.querySelectorAll('.animated-item');
+      anime({
+        targets: items,
+        translateY: [20, 0],
+        opacity: [0, 1],
+        duration: 400,
+        delay: anime.stagger(80, { start: 200 }),
+        easing: 'easeOutCubic',
+      });
+    }
+  }, [activeTab]);
 
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div ref={headerRef} className="flex justify-between items-center" style={{ opacity: 0 }}>
         <h2 className="text-2xl font-bold text-white flex items-center gap-2">
           <span className="text-green-400">⚡</span>
           DeFi Station Hub
@@ -151,20 +205,20 @@ export const DefiView: React.FC = () => {
       </div>
 
       {/* Overview Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+      <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="stat-card p-3 rounded-lg bg-green-500/10 border border-green-500/30" style={{ opacity: 0 }}>
           <div className="text-2xl font-bold text-green-400">${(totalStakedByPlayer / 1000).toFixed(1)}K</div>
           <div className="text-xs text-slate-400">Your Total Staked</div>
         </div>
-        <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
+        <div className="stat-card p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30" style={{ opacity: 0 }}>
           <div className="text-2xl font-bold text-cyan-400">{totalPendingRewards.toLocaleString()}</div>
           <div className="text-xs text-slate-400">Pending Rewards</div>
         </div>
-        <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
+        <div className="stat-card p-3 rounded-lg bg-purple-500/10 border border-purple-500/30" style={{ opacity: 0 }}>
           <div className="text-2xl font-bold text-purple-400">${(totalLPValue / 1000).toFixed(1)}K</div>
           <div className="text-xs text-slate-400">LP Position Value</div>
         </div>
-        <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/30">
+        <div className="stat-card p-3 rounded-lg bg-orange-500/10 border border-orange-500/30" style={{ opacity: 0 }}>
           <div className="text-2xl font-bold text-orange-400">$12.4M</div>
           <div className="text-xs text-slate-400">Protocol TVL</div>
         </div>
@@ -180,18 +234,19 @@ export const DefiView: React.FC = () => {
       )}
 
       {activeTab === 'stations' && (
-        <>
+        <div ref={contentRef} style={{ opacity: 0 }}>
           {/* Stations Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {DEMO_STATIONS.map((station) => (
               <div
                 key={station.id}
                 onClick={() => setSelectedStation(selectedStation?.id === station.id ? null : station)}
-                className={`p-4 rounded-lg bg-slate-900/80 border cursor-pointer transition-all ${
+                className={`animated-item p-4 rounded-lg bg-slate-900/80 border cursor-pointer ${
                   selectedStation?.id === station.id
                     ? 'border-green-400 shadow-lg shadow-green-400/20'
                     : 'border-slate-700 hover:border-slate-600'
                 }`}
+                style={{ opacity: 0 }}
               >
                 {/* Header */}
                 <div className="flex justify-between items-start mb-3">
@@ -257,13 +312,13 @@ export const DefiView: React.FC = () => {
               </div>
             ))}
           </div>
-        </>
+        </div>
       )}
 
       {activeTab === 'pools' && (
-        <>
+        <div ref={contentRef} style={{ opacity: 0 }}>
           {/* Energy Reactor (Liquidity Pools) */}
-          <div className="p-4 rounded-lg bg-slate-900/80 border border-slate-700">
+          <div className="animated-item p-4 rounded-lg bg-slate-900/80 border border-slate-700" style={{ opacity: 0 }}>
             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
               ⚛️ Energy Reactors (Liquidity Pools)
             </h3>
@@ -320,13 +375,13 @@ export const DefiView: React.FC = () => {
               ))}
             </div>
           </div>
-        </>
+        </div>
       )}
 
       {activeTab === 'swap' && (
-        <>
+        <div ref={contentRef} style={{ opacity: 0 }}>
           {/* Token Swap */}
-          <div className="max-w-md mx-auto">
+          <div className="animated-item max-w-md mx-auto" style={{ opacity: 0 }}>
             <div className="p-6 rounded-lg bg-slate-900/80 border border-slate-700">
               <h3 className="text-lg font-bold text-white mb-4 text-center">⚡ Energy Swap</h3>
 
@@ -400,7 +455,7 @@ export const DefiView: React.FC = () => {
               </button>
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

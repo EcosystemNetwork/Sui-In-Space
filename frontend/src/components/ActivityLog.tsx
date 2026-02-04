@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
+import anime from 'animejs';
 
 /**
  * Activity Log Component
  * Shows recent game activity events
+ * Enhanced with anime.js animations
  */
 
 interface ActivityEvent {
@@ -92,9 +94,26 @@ interface ActivityLogProps {
 
 export const ActivityLog: React.FC<ActivityLogProps> = ({ maxEvents = 5, compact = false }) => {
   const events = DEMO_EVENTS.slice(0, maxEvents);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const eventsRef = useRef<HTMLDivElement>(null);
+  
+  // Animate entries on mount
+  useEffect(() => {
+    if (eventsRef.current) {
+      const eventItems = eventsRef.current.querySelectorAll('.event-item');
+      anime({
+        targets: eventItems,
+        translateX: [-20, 0],
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(80, { start: 100 }),
+        easing: 'easeOutCubic',
+      });
+    }
+  }, []);
 
   return (
-    <div className={`rounded-lg bg-slate-900/80 border border-slate-700 ${compact ? 'p-3' : 'p-4'}`}>
+    <div ref={containerRef} className={`rounded-lg bg-slate-900/80 border border-slate-700 ${compact ? 'p-3' : 'p-4'}`}>
       <div className="flex items-center justify-between mb-3">
         <h3 className={`font-bold text-white flex items-center gap-2 ${compact ? 'text-sm' : 'text-lg'}`}>
           <span className="text-cyan-400">📋</span>
@@ -107,11 +126,12 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ maxEvents = 5, compact
         )}
       </div>
 
-      <div className="space-y-2">
+      <div ref={eventsRef} className="space-y-2">
         {events.map((event) => (
           <div
             key={event.id}
-            className={`flex items-start gap-3 ${compact ? 'p-2' : 'p-3'} rounded bg-slate-800/50 hover:bg-slate-800/80 transition-colors`}
+            className={`event-item flex items-start gap-3 ${compact ? 'p-2' : 'p-3'} rounded bg-slate-800/50 hover:bg-slate-800/80 transition-colors cursor-pointer`}
+            style={{ opacity: 0 }}
           >
             <span className={compact ? 'text-base' : 'text-xl'}>{EVENT_ICONS[event.type]}</span>
             <div className="flex-1 min-w-0">

@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
+import anime from 'animejs';
 import type { Agent, AgentClass, AgentType } from '../types';
 
 /**
  * Agent Card Component
  * Displays agent information with holographic UI styling
+ * Enhanced with anime.js animations
  */
 
 interface AgentCardProps {
@@ -41,24 +43,106 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, onClick
   const combatPower = Math.floor(
     (agent.stats.power * 3 + agent.stats.mobility * 2 + agent.stats.resilience * 2 + agent.stats.processing) / 8
   );
+  
+  const cardRef = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
+  const cornersRef = useRef<HTMLDivElement[]>([]);
+  
+  // Animate stat bars on mount
+  useEffect(() => {
+    if (statsRef.current) {
+      const bars = statsRef.current.querySelectorAll('.stat-bar-fill');
+      anime({
+        targets: bars,
+        width: (el: Element) => el.getAttribute('data-width') || '0%',
+        duration: 800,
+        delay: anime.stagger(100, { start: 200 }),
+        easing: 'easeOutCubic',
+      });
+    }
+  }, []);
+  
+  // Animate selection state
+  useEffect(() => {
+    if (cardRef.current) {
+      if (isSelected) {
+        anime({
+          targets: cardRef.current,
+          scale: [1, 1.02],
+          duration: 200,
+          easing: 'easeOutCubic',
+        });
+        anime({
+          targets: cornersRef.current,
+          borderColor: ['rgba(34, 211, 238, 0.5)', 'rgba(34, 211, 238, 1)'],
+          duration: 300,
+          easing: 'easeOutCubic',
+        });
+      } else {
+        anime({
+          targets: cardRef.current,
+          scale: 1,
+          duration: 200,
+          easing: 'easeOutCubic',
+        });
+      }
+    }
+  }, [isSelected]);
+  
+  const handleMouseEnter = () => {
+    if (cardRef.current && !isSelected) {
+      anime({
+        targets: cardRef.current,
+        translateY: -4,
+        duration: 200,
+        easing: 'easeOutCubic',
+      });
+    }
+  };
+  
+  const handleMouseLeave = () => {
+    if (cardRef.current && !isSelected) {
+      anime({
+        targets: cardRef.current,
+        translateY: 0,
+        duration: 200,
+        easing: 'easeOutCubic',
+      });
+    }
+  };
+  
+  const handleClick = () => {
+    if (cardRef.current) {
+      anime({
+        targets: cardRef.current,
+        scale: [1, 0.98, 1.02],
+        duration: 200,
+        easing: 'easeInOutQuad',
+      });
+    }
+    onClick?.();
+  };
 
   return (
     <div
+      ref={cardRef}
       className={`
-        relative p-4 rounded-lg border cursor-pointer transition-all duration-300
+        relative p-4 rounded-lg border cursor-pointer
         bg-gradient-to-br from-slate-900/90 to-slate-800/90
         ${isSelected 
           ? 'border-cyan-400 shadow-lg shadow-cyan-400/20' 
           : 'border-slate-700 hover:border-cyan-400/50'
         }
       `}
-      onClick={onClick}
+      onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {/* Holographic corner accents */}
-      <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-cyan-400 rounded-tl" />
-      <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-cyan-400 rounded-tr" />
-      <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-cyan-400 rounded-bl" />
-      <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-cyan-400 rounded-br" />
+      <div ref={el => { if (el) cornersRef.current[0] = el; }} className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-cyan-400 rounded-tl" />
+      <div ref={el => { if (el) cornersRef.current[1] = el; }} className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-cyan-400 rounded-tr" />
+      <div ref={el => { if (el) cornersRef.current[2] = el; }} className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-cyan-400 rounded-bl" />
+      <div ref={el => { if (el) cornersRef.current[3] = el; }} className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-cyan-400 rounded-br" />
 
       {/* Header */}
       <div className="flex justify-between items-start mb-3">
@@ -82,7 +166,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, onClick
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-2 mb-3">
+      <div ref={statsRef} className="grid grid-cols-2 gap-2 mb-3">
         <StatBar label="PRO" value={agent.stats.processing} color="cyan" />
         <StatBar label="MOB" value={agent.stats.mobility} color="blue" />
         <StatBar label="PWR" value={agent.stats.power} color="orange" />
@@ -142,8 +226,9 @@ const StatBar: React.FC<StatBarProps> = ({ label, value, color }) => {
       <span className="text-xs text-slate-400 w-8">{label}</span>
       <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
         <div 
-          className={`h-full ${STAT_COLORS[color]} rounded-full transition-all duration-500`}
-          style={{ width: `${percentage}%` }}
+          className={`stat-bar-fill h-full ${STAT_COLORS[color]} rounded-full`}
+          style={{ width: '0%' }}
+          data-width={`${percentage}%`}
         />
       </div>
       <span className="text-xs text-white w-6 text-right">{value}</span>

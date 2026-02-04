@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import anime from 'animejs';
 
 /**
  * Star Map View Component
  * Galaxy navigation and system information
+ * Enhanced with anime.js animations
  */
 
 interface StarSystem {
@@ -47,11 +49,100 @@ const TYPE_ICONS = {
 export const StarMapView: React.FC = () => {
   const [selectedSystem, setSelectedSystem] = useState<StarSystem | null>(null);
   const [viewMode, setViewMode] = useState<'galaxy' | 'system'>('galaxy');
+  
+  const headerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const infoPanelRef = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
+  
+  // Initial entrance animations
+  useEffect(() => {
+    // Animate header
+    if (headerRef.current) {
+      anime({
+        targets: headerRef.current,
+        translateY: [-20, 0],
+        opacity: [0, 1],
+        duration: 600,
+        easing: 'easeOutCubic',
+      });
+    }
+    
+    // Animate map container
+    if (mapRef.current) {
+      anime({
+        targets: mapRef.current,
+        opacity: [0, 1],
+        scale: [0.95, 1],
+        duration: 800,
+        delay: 200,
+        easing: 'easeOutCubic',
+      });
+      
+      // Animate star systems appearing
+      const systems = mapRef.current.querySelectorAll('.star-system');
+      anime({
+        targets: systems,
+        opacity: [0, 1],
+        scale: [0, 1],
+        duration: 600,
+        delay: anime.stagger(100, { start: 400 }),
+        easing: 'easeOutBack',
+      });
+      
+      // Animate connection lines
+      const lines = mapRef.current.querySelectorAll('.connection-line');
+      anime({
+        targets: lines,
+        strokeDashoffset: [anime.setDashoffset, 0],
+        duration: 1500,
+        delay: anime.stagger(200, { start: 600 }),
+        easing: 'easeOutCubic',
+      });
+    }
+    
+    // Animate stats
+    if (statsRef.current) {
+      const statCards = statsRef.current.querySelectorAll('.stat-card');
+      anime({
+        targets: statCards,
+        translateY: [20, 0],
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(100, { start: 800 }),
+        easing: 'easeOutCubic',
+      });
+    }
+  }, []);
+  
+  // Animate info panel when selection changes
+  useEffect(() => {
+    if (infoPanelRef.current && selectedSystem) {
+      anime({
+        targets: infoPanelRef.current,
+        translateX: [20, 0],
+        opacity: [0, 1],
+        duration: 400,
+        easing: 'easeOutCubic',
+      });
+    }
+  }, [selectedSystem]);
+  
+  const handleSystemClick = (system: StarSystem, e: React.MouseEvent) => {
+    const button = e.currentTarget;
+    anime({
+      targets: button,
+      scale: [1, 1.3, 1.1],
+      duration: 300,
+      easing: 'easeOutBack',
+    });
+    setSelectedSystem(system);
+  };
 
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div ref={headerRef} className="flex justify-between items-center" style={{ opacity: 0 }}>
         <h2 className="text-2xl font-bold text-white flex items-center gap-2">
           <span className="text-cyan-400">🗺️</span>
           Galactic Star Map
@@ -84,7 +175,7 @@ export const StarMapView: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Star Map */}
         <div className="lg:col-span-3">
-          <div className="relative aspect-[16/9] bg-slate-900/80 rounded-lg border border-slate-700 overflow-hidden">
+          <div ref={mapRef} className="relative aspect-[16/9] bg-slate-900/80 rounded-lg border border-slate-700 overflow-hidden" style={{ opacity: 0 }}>
             {/* Grid overlay */}
             <div className="absolute inset-0 opacity-20">
               <svg className="w-full h-full">
@@ -104,13 +195,14 @@ export const StarMapView: React.FC = () => {
                 return (
                   <line
                     key={`line-${index}`}
+                    className="connection-line"
                     x1={`${system.x}%`}
                     y1={`${system.y}%`}
                     x2={`${nextSystem.x}%`}
                     y2={`${nextSystem.y}%`}
-                    stroke="rgba(34, 211, 238, 0.2)"
-                    strokeWidth="1"
-                    strokeDasharray="4 4"
+                    stroke="rgba(34, 211, 238, 0.3)"
+                    strokeWidth="2"
+                    strokeDasharray="8 4"
                   />
                 );
               })}
@@ -120,13 +212,13 @@ export const StarMapView: React.FC = () => {
             {DEMO_SYSTEMS.map((system) => (
               <button
                 key={system.id}
-                onClick={() => setSelectedSystem(system)}
-                className={`absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
-                  selectedSystem?.id === system.id ? 'scale-150 z-10' : 'hover:scale-125'
+                onClick={(e) => handleSystemClick(system, e)}
+                className={`star-system absolute transform -translate-x-1/2 -translate-y-1/2 ${
+                  selectedSystem?.id === system.id ? 'z-10' : ''
                 }`}
-                style={{ left: `${system.x}%`, top: `${system.y}%` }}
+                style={{ left: `${system.x}%`, top: `${system.y}%`, opacity: 0 }}
               >
-                <div className={`relative ${system.playerOwned ? 'animate-pulse' : ''}`}>
+                <div className="relative">
                   <div
                     className={`w-4 h-4 rounded-full ${TYPE_COLORS[system.type]} ${
                       selectedSystem?.id === system.id ? 'ring-2 ring-cyan-400 ring-offset-2 ring-offset-slate-900' : ''
@@ -164,7 +256,7 @@ export const StarMapView: React.FC = () => {
 
         {/* System Info Panel */}
         <div className="lg:col-span-1">
-          <div className="bg-slate-900/80 rounded-lg border border-slate-700 p-4 h-full">
+          <div ref={infoPanelRef} className="bg-slate-900/80 rounded-lg border border-slate-700 p-4 h-full">
             {selectedSystem ? (
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
@@ -222,20 +314,20 @@ export const StarMapView: React.FC = () => {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="p-3 rounded-lg bg-slate-800/50 border border-slate-700">
+      <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="stat-card p-3 rounded-lg bg-slate-800/50 border border-slate-700" style={{ opacity: 0 }}>
           <div className="text-2xl font-bold text-cyan-400">7</div>
           <div className="text-xs text-slate-400">Systems Discovered</div>
         </div>
-        <div className="p-3 rounded-lg bg-slate-800/50 border border-slate-700">
+        <div className="stat-card p-3 rounded-lg bg-slate-800/50 border border-slate-700" style={{ opacity: 0 }}>
           <div className="text-2xl font-bold text-green-400">1</div>
           <div className="text-xs text-slate-400">Systems Owned</div>
         </div>
-        <div className="p-3 rounded-lg bg-slate-800/50 border border-slate-700">
+        <div className="stat-card p-3 rounded-lg bg-slate-800/50 border border-slate-700" style={{ opacity: 0 }}>
           <div className="text-2xl font-bold text-orange-400">5</div>
           <div className="text-xs text-slate-400">Planets Colonized</div>
         </div>
-        <div className="p-3 rounded-lg bg-slate-800/50 border border-slate-700">
+        <div className="stat-card p-3 rounded-lg bg-slate-800/50 border border-slate-700" style={{ opacity: 0 }}>
           <div className="text-2xl font-bold text-purple-400">3</div>
           <div className="text-xs text-slate-400">Active Stations</div>
         </div>

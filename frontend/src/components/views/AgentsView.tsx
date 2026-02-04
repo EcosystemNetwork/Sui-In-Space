@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import anime from 'animejs';
 import { AgentCard } from '../AgentCard';
 import type { Agent } from '../../types';
 import { AgentType, AgentClass } from '../../types';
@@ -6,6 +7,7 @@ import { AgentType, AgentClass } from '../../types';
 /**
  * Agents View Component
  * Agent roster, upgrades, augmentations (Barracks)
+ * Enhanced with anime.js animations
  */
 
 // Demo agents for display
@@ -105,11 +107,82 @@ export const AgentsView: React.FC = () => {
   const filteredAgents = filterClass !== null 
     ? DEMO_AGENTS.filter(a => a.class === filterClass)
     : DEMO_AGENTS;
+    
+  const headerRef = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
+  const filterRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const actionsRef = useRef<HTMLDivElement>(null);
+  
+  // Initial entrance animations
+  useEffect(() => {
+    if (headerRef.current) {
+      anime({
+        targets: headerRef.current,
+        translateY: [-20, 0],
+        opacity: [0, 1],
+        duration: 600,
+        easing: 'easeOutCubic',
+      });
+    }
+    
+    if (statsRef.current) {
+      const statCards = statsRef.current.querySelectorAll('.stat-card');
+      anime({
+        targets: statCards,
+        translateY: [20, 0],
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(80, { start: 200 }),
+        easing: 'easeOutCubic',
+      });
+    }
+    
+    if (filterRef.current) {
+      const buttons = filterRef.current.querySelectorAll('button');
+      anime({
+        targets: buttons,
+        translateX: [-20, 0],
+        opacity: [0, 1],
+        duration: 400,
+        delay: anime.stagger(50, { start: 400 }),
+        easing: 'easeOutCubic',
+      });
+    }
+  }, [viewMode]);
+  
+  // Animate grid when filter changes
+  useEffect(() => {
+    if (gridRef.current) {
+      const cards = gridRef.current.querySelectorAll('.agent-card-wrapper');
+      anime({
+        targets: cards,
+        translateY: [30, 0],
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(80),
+        easing: 'easeOutCubic',
+      });
+    }
+  }, [filterClass, viewMode]);
+  
+  // Animate actions panel
+  useEffect(() => {
+    if (actionsRef.current && selectedAgent) {
+      anime({
+        targets: actionsRef.current,
+        translateY: [20, 0],
+        opacity: [0, 1],
+        duration: 400,
+        easing: 'easeOutCubic',
+      });
+    }
+  }, [selectedAgent]);
 
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div ref={headerRef} className="flex justify-between items-center" style={{ opacity: 0 }}>
         <h2 className="text-2xl font-bold text-white flex items-center gap-2">
           <span className="text-purple-400">🤖</span>
           Agent Barracks
@@ -141,20 +214,20 @@ export const AgentsView: React.FC = () => {
       {viewMode === 'roster' ? (
         <>
           {/* Agent Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
+          <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="stat-card p-3 rounded-lg bg-purple-500/10 border border-purple-500/30" style={{ opacity: 0 }}>
               <div className="text-2xl font-bold text-purple-400">{DEMO_AGENTS.length}</div>
               <div className="text-xs text-slate-400">Total Agents</div>
             </div>
-            <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+            <div className="stat-card p-3 rounded-lg bg-green-500/10 border border-green-500/30" style={{ opacity: 0 }}>
               <div className="text-2xl font-bold text-green-400">{DEMO_AGENTS.filter(a => a.isStaked).length}</div>
               <div className="text-xs text-slate-400">Staked</div>
             </div>
-            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
+            <div className="stat-card p-3 rounded-lg bg-blue-500/10 border border-blue-500/30" style={{ opacity: 0 }}>
               <div className="text-2xl font-bold text-blue-400">{DEMO_AGENTS.filter(a => a.currentMission).length}</div>
               <div className="text-xs text-slate-400">On Mission</div>
             </div>
-            <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/30">
+            <div className="stat-card p-3 rounded-lg bg-orange-500/10 border border-orange-500/30" style={{ opacity: 0 }}>
               <div className="text-2xl font-bold text-orange-400">
                 {Math.floor(DEMO_AGENTS.reduce((sum, a) => sum + a.level, 0) / DEMO_AGENTS.length)}
               </div>
@@ -163,7 +236,7 @@ export const AgentsView: React.FC = () => {
           </div>
 
           {/* Class Filter */}
-          <div className="flex flex-wrap gap-2">
+          <div ref={filterRef} className="flex flex-wrap gap-2">
             <button
               onClick={() => setFilterClass(null)}
               className={`px-3 py-1.5 rounded text-xs ${
@@ -190,20 +263,21 @@ export const AgentsView: React.FC = () => {
           </div>
 
           {/* Agent Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredAgents.map((agent) => (
-              <AgentCard
-                key={agent.id}
-                agent={agent}
-                isSelected={selectedAgent?.id === agent.id}
-                onClick={() => setSelectedAgent(agent)}
-              />
+              <div key={agent.id} className="agent-card-wrapper" style={{ opacity: 0 }}>
+                <AgentCard
+                  agent={agent}
+                  isSelected={selectedAgent?.id === agent.id}
+                  onClick={() => setSelectedAgent(agent)}
+                />
+              </div>
             ))}
           </div>
 
           {/* Selected Agent Actions */}
           {selectedAgent && (
-            <div className="p-4 rounded-lg bg-slate-900/80 border border-purple-500/30">
+            <div ref={actionsRef} className="p-4 rounded-lg bg-slate-900/80 border border-purple-500/30" style={{ opacity: 0 }}>
               <h3 className="text-lg font-bold text-white mb-3">Agent Actions: {selectedAgent.name}</h3>
               <div className="flex flex-wrap gap-2">
                 <button className="px-4 py-2 rounded bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/30 transition-colors text-sm">
