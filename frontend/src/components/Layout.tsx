@@ -4,7 +4,7 @@ import anime from 'animejs';
 /**
  * Main Application Layout Component
  * Provides the holographic UI frame for the game
- * Enhanced with anime.js animations
+ * Enhanced with anime.js animations and futuristic sci-fi HUD design
  */
 
 export type TabType = 'map' | 'hangar' | 'agents' | 'missions' | 'defi' | 'governance';
@@ -32,6 +32,11 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'defi', icon: '⚡', label: 'DeFi' },
   { id: 'governance', icon: '🏛️', label: 'Governance' },
 ];
+
+// Star color variants for the background
+const STAR_COLORS = ['#00f0ff', '#ffffff', '#0080ff'] as const;
+const getStarColor = (index: number): string => STAR_COLORS[index % 3];
+const getStarGlow = (index: number): string => index % 3 === 0 ? '0 0 4px #00f0ff' : 'none';
 
 // Generate deterministic star positions with more variety
 const generateStars = (count: number) => {
@@ -72,6 +77,7 @@ export const Layout: React.FC<LayoutProps> = ({
   const mainRef = useRef<HTMLElement>(null);
   const starsContainerRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLDivElement>(null);
+  const hudFrameRef = useRef<HTMLDivElement>(null);
   
   // Initial page load animations
   useEffect(() => {
@@ -103,14 +109,26 @@ export const Layout: React.FC<LayoutProps> = ({
       anime({
         targets: logoRef.current,
         boxShadow: [
-          '0 0 0px rgba(34, 211, 238, 0)',
-          '0 0 20px rgba(34, 211, 238, 0.6)',
-          '0 0 10px rgba(34, 211, 238, 0.3)',
+          '0 0 0px rgba(0, 240, 255, 0)',
+          '0 0 30px rgba(0, 240, 255, 0.8)',
+          '0 0 15px rgba(0, 240, 255, 0.4)',
         ],
         duration: 2000,
         easing: 'easeInOutSine',
         loop: true,
         direction: 'alternate',
+      });
+    }
+    
+    // Animate HUD frame corners
+    if (hudFrameRef.current) {
+      anime({
+        targets: hudFrameRef.current.querySelectorAll('.hud-corner'),
+        opacity: [0, 1],
+        scale: [0.8, 1],
+        duration: 600,
+        delay: anime.stagger(100, { start: 300 }),
+        easing: 'easeOutCubic',
       });
     }
     
@@ -147,78 +165,121 @@ export const Layout: React.FC<LayoutProps> = ({
   }, [activeTab]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-[#000a14] text-[#e0f7ff] hud-flicker">
       {/* Background Effects */}
-      <div className="fixed inset-0 bg-gradient-to-b from-slate-900 via-slate-950 to-black" />
-      <div className="fixed inset-0 bg-[url('/grid.svg')] opacity-10" />
+      <div className="fixed inset-0 bg-gradient-to-b from-[#001020] via-[#000a14] to-[#000510]" />
+      
+      {/* Hex Grid Background */}
+      <div className="fixed inset-0 hex-grid opacity-50" />
+      
+      {/* Data Grid Overlay */}
+      <div className="fixed inset-0 data-grid" />
       
       {/* Animated Stars Background */}
       <div ref={starsContainerRef} className="fixed inset-0 overflow-hidden pointer-events-none">
         {stars.map((star, i) => (
           <div
             key={i}
-            className="star absolute rounded-full bg-white"
+            className="star absolute rounded-full"
             style={{
               left: `${star.left}%`,
               top: `${star.top}%`,
               width: `${star.size}px`,
               height: `${star.size}px`,
               opacity: 0,
+              background: getStarColor(i),
+              boxShadow: getStarGlow(i),
             }}
           />
         ))}
       </div>
 
+      {/* HUD Frame Corners */}
+      <div ref={hudFrameRef} className="fixed inset-0 pointer-events-none z-50">
+        {/* Top Left */}
+        <div className="hud-corner absolute top-4 left-4 w-24 h-24">
+          <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#00f0ff] to-transparent" />
+          <div className="absolute top-0 left-0 h-full w-[2px] bg-gradient-to-b from-[#00f0ff] to-transparent" />
+          <div className="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-[#00f0ff]" />
+        </div>
+        {/* Top Right */}
+        <div className="hud-corner absolute top-4 right-4 w-24 h-24">
+          <div className="absolute top-0 right-0 w-full h-[2px] bg-gradient-to-l from-[#00f0ff] to-transparent" />
+          <div className="absolute top-0 right-0 h-full w-[2px] bg-gradient-to-b from-[#00f0ff] to-transparent" />
+          <div className="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-[#00f0ff]" />
+        </div>
+        {/* Bottom Left */}
+        <div className="hud-corner absolute bottom-4 left-4 w-24 h-24">
+          <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#00f0ff] to-transparent" />
+          <div className="absolute bottom-0 left-0 h-full w-[2px] bg-gradient-to-t from-[#00f0ff] to-transparent" />
+          <div className="absolute bottom-2 left-2 w-3 h-3 border-b-2 border-l-2 border-[#00f0ff]" />
+        </div>
+        {/* Bottom Right */}
+        <div className="hud-corner absolute bottom-4 right-4 w-24 h-24">
+          <div className="absolute bottom-0 right-0 w-full h-[2px] bg-gradient-to-l from-[#00f0ff] to-transparent" />
+          <div className="absolute bottom-0 right-0 h-full w-[2px] bg-gradient-to-t from-[#00f0ff] to-transparent" />
+          <div className="absolute bottom-2 right-2 w-3 h-3 border-b-2 border-r-2 border-[#00f0ff]" />
+        </div>
+      </div>
+
       {/* Main Content */}
       <div className="relative z-10 flex flex-col min-h-screen">
         {/* Header */}
-        <header ref={headerRef} className="border-b border-cyan-500/30 bg-slate-900/80 backdrop-blur-md" style={{ opacity: 0 }}>
+        <header ref={headerRef} className="border-b border-[#00f0ff]/30 bg-[#000a14]/90 backdrop-blur-md" style={{ opacity: 0 }}>
           <div className="container mx-auto px-4 py-3">
             <div className="flex items-center justify-between">
               {/* Logo */}
               <div className="flex items-center gap-3">
                 <div 
                   ref={logoRef}
-                  className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center"
+                  className="w-12 h-12 rounded border-2 border-[#00f0ff]/60 bg-gradient-to-br from-[#00f0ff]/20 to-[#0080ff]/10 flex items-center justify-center relative"
                 >
-                  <span className="text-xl">🌌</span>
+                  <span className="text-2xl">🌌</span>
+                  <div className="absolute inset-0 border border-[#00f0ff]/20 rounded" style={{ margin: '3px' }} />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                  <h1 className="text-xl font-display font-bold text-[#00f0ff] text-glow-cyan tracking-wider">
                     SUI IN SPACE
                   </h1>
-                  <p className="text-xs text-slate-400">Galactic DeFi Empire</p>
+                  <p className="text-xs text-[#00f0ff]/60 font-mono tracking-widest uppercase">Galactic DeFi Empire</p>
                 </div>
               </div>
 
               {/* Player Stats Bar */}
-              <div className="hidden md:flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-slate-800/50 border border-slate-700">
-                  <span className="text-cyan-400">💎</span>
-                  <span className="text-white font-medium">{galacticBalance.toLocaleString()}</span>
-                  <span className="text-slate-400">GALACTIC</span>
+              <div className="hidden md:flex items-center gap-3 text-sm">
+                <div className="hud-panel flex items-center gap-2 px-4 py-2 rounded">
+                  <span className="text-[#00f0ff]">💎</span>
+                  <span className="font-display font-bold text-[#00f0ff]">{galacticBalance.toLocaleString()}</span>
+                  <span className="text-[#00f0ff]/50 text-xs font-mono">GALACTIC</span>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-slate-800/50 border border-slate-700">
-                  <span className="text-yellow-400">⚡</span>
-                  <span className="text-white font-medium">{energyLevel}/100</span>
-                  <span className="text-slate-400">Energy</span>
+                <div className="hud-panel flex items-center gap-2 px-4 py-2 rounded">
+                  <span className="text-[#ff9500]">⚡</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-display font-bold text-[#ff9500]">{energyLevel}</span>
+                    <div className="w-16 h-1.5 bg-[#001a30] rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-[#ff9500] to-[#ff6b00] rounded-full transition-all"
+                        style={{ width: `${energyLevel}%` }}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-slate-800/50 border border-slate-700">
-                  <span className="text-purple-400">⭐</span>
-                  <span className="text-white font-medium">Lv.{playerLevel}</span>
+                <div className="hud-panel flex items-center gap-2 px-4 py-2 rounded">
+                  <span className="text-[#bf5af2]">⭐</span>
+                  <span className="font-display font-bold text-[#bf5af2]">Lv.{playerLevel}</span>
                 </div>
               </div>
 
-              {/* Wallet Connection Placeholder */}
-              <button className="px-4 py-2 rounded-lg bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/30 transition-colors">
-                Connect Wallet
+              {/* Wallet Connection */}
+              <button className="hud-btn px-5 py-2.5 rounded font-semibold tracking-wide">
+                <span className="relative z-10">Connect Wallet</span>
               </button>
             </div>
           </div>
         </header>
 
         {/* Navigation */}
-        <nav ref={navRef} className="border-b border-slate-700/50 bg-slate-900/50 backdrop-blur-sm">
+        <nav ref={navRef} className="border-b border-[#00f0ff]/20 bg-[#000a14]/80 backdrop-blur-sm">
           <div className="container mx-auto px-4">
             <div className="flex items-center gap-1 overflow-x-auto">
               {NAV_ITEMS.map((item) => (
@@ -240,32 +301,34 @@ export const Layout: React.FC<LayoutProps> = ({
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-slate-800 bg-slate-900/80 backdrop-blur-md">
+        <footer className="border-t border-[#00f0ff]/20 bg-[#000a14]/90 backdrop-blur-md">
           <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between text-sm text-slate-400 flex-wrap gap-2">
+            <div className="flex items-center justify-between text-sm text-[#00f0ff]/50 flex-wrap gap-2 font-mono">
               <div className="flex items-center gap-4">
-                <span>Current Epoch: 12,847</span>
-                <span className="text-cyan-400 hidden sm:inline">●</span>
-                <span>GALACTIC: $0.042</span>
-                <span className="text-cyan-400 hidden sm:inline">●</span>
-                <span>TVL: $12.4M</span>
+                <span className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#00ff9d] animate-pulse" />
+                  EPOCH: 12,847
+                </span>
+                <span className="text-[#00f0ff]/20">│</span>
+                <span>GALACTIC: <span className="text-[#00f0ff]">$0.042</span></span>
+                <span className="text-[#00f0ff]/20">│</span>
+                <span>TVL: <span className="text-[#00ff9d]">$12.4M</span></span>
               </div>
               <div className="flex items-center gap-4">
-                <a href="#" className="hover:text-cyan-400 transition-colors">Docs</a>
-                <a href="#" className="hover:text-cyan-400 transition-colors">Discord</a>
-                <a href="#" className="hover:text-cyan-400 transition-colors">Twitter</a>
+                <a href="#" className="hover:text-[#00f0ff] transition-colors">Docs</a>
+                <a href="#" className="hover:text-[#00f0ff] transition-colors">Discord</a>
+                <a href="#" className="hover:text-[#00f0ff] transition-colors">Twitter</a>
               </div>
             </div>
           </div>
         </footer>
       </div>
 
-      {/* Scanlines Effect */}
-      <div className="fixed inset-0 pointer-events-none opacity-5">
-        <div className="h-full w-full" style={{
-          background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 136, 0.03) 2px, rgba(0, 255, 136, 0.03) 4px)',
-        }} />
-      </div>
+      {/* Scanner Line Effect */}
+      <div className="scanner-line" />
+
+      {/* CRT Scanlines Overlay */}
+      <div className="fixed inset-0 pointer-events-none crt-scanlines opacity-[0.03]" />
     </div>
   );
 };
@@ -322,16 +385,23 @@ const NavTab: React.FC<NavTabProps> = ({ icon, label, active, onClick }) => {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className={`
-        px-4 py-3 flex items-center gap-2 text-sm font-medium whitespace-nowrap
+        px-5 py-3 flex items-center gap-2 text-sm font-semibold whitespace-nowrap uppercase tracking-wider relative
+        transition-all duration-300
         ${active 
-          ? 'text-cyan-400 border-b-2 border-cyan-400 bg-cyan-500/10' 
-          : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+          ? 'text-[#00f0ff] bg-[#00f0ff]/10' 
+          : 'text-[#00f0ff]/50 hover:text-[#00f0ff] hover:bg-[#00f0ff]/5'
         }
       `}
       style={{ opacity: 0 }}
     >
       <span>{icon}</span>
-      <span>{label}</span>
+      <span className="font-display">{label}</span>
+      {active && (
+        <>
+          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#00f0ff] to-transparent" />
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#00f0ff]/30 to-transparent" />
+        </>
+      )}
     </button>
   );
 };
