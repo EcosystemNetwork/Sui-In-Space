@@ -3,18 +3,18 @@ import anime from 'animejs';
 
 /**
  * Main Application Layout Component
- * Provides the holographic UI frame for the game
- * Enhanced with anime.js animations
+ * Space Command themed UI matching gameart.png design
+ * Features: Header with GALACTIC/ENERGY display, navigation tabs (Dock, Missions, Agents, Market, Farm, DAO)
  */
 
-export type TabType = 'map' | 'hangar' | 'agents' | 'missions' | 'defi' | 'governance';
+export type TabType = 'dock' | 'missions' | 'agents' | 'market' | 'farm' | 'dao';
 
 interface LayoutProps {
   children: React.ReactNode;
   activeTab: TabType;
   onTabChange: (tab: TabType) => void;
   galacticBalance?: number;
-  energyLevel?: number;
+  energyBalance?: number;
   playerLevel?: number;
 }
 
@@ -25,15 +25,15 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'map', icon: '🗺️', label: 'Star Map' },
-  { id: 'hangar', icon: '🚀', label: 'Hangar' },
-  { id: 'agents', icon: '🤖', label: 'Agents' },
+  { id: 'dock', icon: '🚀', label: 'Dock' },
   { id: 'missions', icon: '📜', label: 'Missions' },
-  { id: 'defi', icon: '⚡', label: 'DeFi' },
-  { id: 'governance', icon: '🏛️', label: 'Governance' },
+  { id: 'agents', icon: '🤖', label: 'Agents' },
+  { id: 'market', icon: '💱', label: 'Market' },
+  { id: 'farm', icon: '🌾', label: 'Farm' },
+  { id: 'dao', icon: '🏛️', label: 'DAO' },
 ];
 
-// Generate deterministic star positions with more variety
+// Generate deterministic star positions
 const generateStars = (count: number) => {
   const stars = [];
   for (let i = 0; i < count; i++) {
@@ -60,13 +60,11 @@ export const Layout: React.FC<LayoutProps> = ({
   activeTab, 
   onTabChange,
   galacticBalance = 125000,
-  energyLevel = 85,
-  playerLevel = 15,
+  energyBalance = 42000,
+  // playerLevel reserved for future use
 }) => {
-  // Memoize stars to prevent regeneration on re-renders
-  const stars = useMemo(() => generateStars(150), []);
+  const stars = useMemo(() => generateStars(100), []);
   
-  // Refs for animations
   const headerRef = useRef<HTMLElement>(null);
   const navRef = useRef<HTMLElement>(null);
   const mainRef = useRef<HTMLElement>(null);
@@ -75,7 +73,6 @@ export const Layout: React.FC<LayoutProps> = ({
   
   // Initial page load animations
   useEffect(() => {
-    // Animate header entrance
     if (headerRef.current) {
       anime({
         targets: headerRef.current,
@@ -86,7 +83,6 @@ export const Layout: React.FC<LayoutProps> = ({
       });
     }
     
-    // Animate navigation entrance
     if (navRef.current) {
       anime({
         targets: navRef.current.querySelectorAll('button'),
@@ -98,7 +94,6 @@ export const Layout: React.FC<LayoutProps> = ({
       });
     }
     
-    // Animate logo with glow effect
     if (logoRef.current) {
       anime({
         targets: logoRef.current,
@@ -114,13 +109,12 @@ export const Layout: React.FC<LayoutProps> = ({
       });
     }
     
-    // Animate stars with twinkling effect
     if (starsContainerRef.current) {
       const starElements = starsContainerRef.current.querySelectorAll('.star');
       anime({
         targets: starElements,
         opacity: (_el: Element, i: number) => [
-          { value: 0.2, duration: 0 },
+          { value: 0.1, duration: 0 },
           { value: stars[i % stars.length].opacity, duration: 1000 + (i % 5) * 500 },
         ],
         scale: [
@@ -133,7 +127,6 @@ export const Layout: React.FC<LayoutProps> = ({
     }
   }, [stars]);
   
-  // Animate main content when tab changes
   useEffect(() => {
     if (mainRef.current) {
       anime({
@@ -147,10 +140,9 @@ export const Layout: React.FC<LayoutProps> = ({
   }, [activeTab]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      {/* Background Effects */}
-      <div className="fixed inset-0 bg-gradient-to-b from-slate-900 via-slate-950 to-black" />
-      <div className="fixed inset-0 bg-[url('/grid.svg')] opacity-10" />
+    <div className="min-h-screen bg-space-darker text-white">
+      {/* Background - Deep space gradient */}
+      <div className="fixed inset-0 bg-gradient-to-b from-space-dark via-space-darker to-black" />
       
       {/* Animated Stars Background */}
       <div ref={starsContainerRef} className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -169,58 +161,75 @@ export const Layout: React.FC<LayoutProps> = ({
         ))}
       </div>
 
+      {/* Subtle cyan glow overlay */}
+      <div className="fixed inset-0 bg-cyan-glow pointer-events-none opacity-30" />
+
       {/* Main Content */}
       <div className="relative z-10 flex flex-col min-h-screen">
-        {/* Header */}
-        <header ref={headerRef} className="border-b border-cyan-500/30 bg-slate-900/80 backdrop-blur-md" style={{ opacity: 0 }}>
-          <div className="container mx-auto px-4 py-3">
+        {/* Header - Space Command Style */}
+        <header 
+          ref={headerRef} 
+          className="border-b border-space-border bg-space-panel/95 backdrop-blur-md" 
+          style={{ opacity: 0 }}
+        >
+          <div className="container mx-auto px-4 py-2">
             <div className="flex items-center justify-between">
               {/* Logo */}
               <div className="flex items-center gap-3">
                 <div 
                   ref={logoRef}
-                  className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center"
+                  className="w-10 h-10 rounded-lg bg-gradient-to-br from-galactic-cyan to-galactic-blue flex items-center justify-center"
                 >
                   <span className="text-xl">🌌</span>
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                  <h1 className="font-display text-xl font-bold text-galactic-cyan tracking-wider">
                     SUI IN SPACE
                   </h1>
-                  <p className="text-xs text-slate-400">Galactic DeFi Empire</p>
+                  <p className="text-xs text-metallic-silver">Sector 1d5.d8</p>
                 </div>
               </div>
 
-              {/* Player Stats Bar */}
-              <div className="hidden md:flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-slate-800/50 border border-slate-700">
-                  <span className="text-cyan-400">💎</span>
-                  <span className="text-white font-medium">{galacticBalance.toLocaleString()}</span>
-                  <span className="text-slate-400">GALACTIC</span>
+              {/* Resource Display - Matching gameart style */}
+              <div className="hidden md:flex items-center gap-3">
+                {/* GALACTIC Balance */}
+                <div className="resource-badge">
+                  <span className="text-energy-gold text-lg">💰</span>
+                  <span className="text-white font-bold">{galacticBalance.toLocaleString()}</span>
+                  <span className="text-metallic-silver text-sm">GALACTIC</span>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-slate-800/50 border border-slate-700">
-                  <span className="text-yellow-400">⚡</span>
-                  <span className="text-white font-medium">{energyLevel}/100</span>
-                  <span className="text-slate-400">Energy</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-slate-800/50 border border-slate-700">
-                  <span className="text-purple-400">⭐</span>
-                  <span className="text-white font-medium">Lv.{playerLevel}</span>
+                
+                {/* ENERGY Balance */}
+                <div className="resource-badge">
+                  <span className="text-galactic-cyan text-lg">⚡</span>
+                  <span className="text-white font-bold">{energyBalance.toLocaleString()}</span>
+                  <span className="text-metallic-silver text-sm">ENERGY</span>
                 </div>
               </div>
 
-              {/* Wallet Connection Placeholder */}
-              <button className="px-4 py-2 rounded-lg bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/30 transition-colors">
-                Connect Wallet
-              </button>
+              {/* Action Icons & Wallet */}
+              <div className="flex items-center gap-2">
+                <button className="p-2 rounded-lg hover:bg-space-border/50 transition-colors text-galactic-cyan">
+                  <span className="text-xl">💧</span>
+                </button>
+                <button className="p-2 rounded-lg hover:bg-space-border/50 transition-colors text-metallic-silver">
+                  <span className="text-xl">✉️</span>
+                </button>
+                <button className="p-2 rounded-lg hover:bg-space-border/50 transition-colors text-metallic-silver">
+                  <span className="text-xl">👥</span>
+                </button>
+                <button className="space-btn px-4 py-2 rounded-lg text-galactic-cyan font-medium text-sm">
+                  Connect Wallet
+                </button>
+              </div>
             </div>
           </div>
         </header>
 
-        {/* Navigation */}
-        <nav ref={navRef} className="border-b border-slate-700/50 bg-slate-900/50 backdrop-blur-sm">
+        {/* Navigation - Tab style matching gameart */}
+        <nav ref={navRef} className="border-b border-space-border bg-space-dark/80 backdrop-blur-sm">
           <div className="container mx-auto px-4">
-            <div className="flex items-center gap-1 overflow-x-auto">
+            <div className="flex items-center gap-1">
               {NAV_ITEMS.map((item) => (
                 <NavTab
                   key={item.id}
@@ -240,31 +249,24 @@ export const Layout: React.FC<LayoutProps> = ({
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-slate-800 bg-slate-900/80 backdrop-blur-md">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between text-sm text-slate-400 flex-wrap gap-2">
+        <footer className="border-t border-space-border bg-space-panel/80 backdrop-blur-md">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex items-center justify-between text-sm text-metallic-silver flex-wrap gap-2">
               <div className="flex items-center gap-4">
-                <span>Current Epoch: 12,847</span>
-                <span className="text-cyan-400 hidden sm:inline">●</span>
-                <span>GALACTIC: $0.042</span>
-                <span className="text-cyan-400 hidden sm:inline">●</span>
-                <span>TVL: $12.4M</span>
+                <span>Current Epoch: <span className="text-galactic-cyan">12,847</span></span>
+                <span className="text-galactic-cyan hidden sm:inline">●</span>
+                <span>GALACTIC: <span className="text-energy-gold">$0.042</span></span>
+                <span className="text-galactic-cyan hidden sm:inline">●</span>
+                <span>TVL: <span className="text-white">$12.4M</span></span>
               </div>
               <div className="flex items-center gap-4">
-                <a href="#" className="hover:text-cyan-400 transition-colors">Docs</a>
-                <a href="#" className="hover:text-cyan-400 transition-colors">Discord</a>
-                <a href="#" className="hover:text-cyan-400 transition-colors">Twitter</a>
+                <a href="#" className="hover:text-galactic-cyan transition-colors">Docs</a>
+                <a href="#" className="hover:text-galactic-cyan transition-colors">Discord</a>
+                <a href="#" className="hover:text-galactic-cyan transition-colors">Twitter</a>
               </div>
             </div>
           </div>
         </footer>
-      </div>
-
-      {/* Scanlines Effect */}
-      <div className="fixed inset-0 pointer-events-none opacity-5">
-        <div className="h-full w-full" style={{
-          background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 136, 0.03) 2px, rgba(0, 255, 136, 0.03) 4px)',
-        }} />
       </div>
     </div>
   );
@@ -282,7 +284,6 @@ const NavTab: React.FC<NavTabProps> = ({ icon, label, active, onClick }) => {
   
   const handleClick = () => {
     if (buttonRef.current && onClick) {
-      // Quick pulse animation on click
       anime({
         targets: buttonRef.current,
         scale: [1, 0.95, 1],
@@ -322,15 +323,12 @@ const NavTab: React.FC<NavTabProps> = ({ icon, label, active, onClick }) => {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className={`
-        px-4 py-3 flex items-center gap-2 text-sm font-medium whitespace-nowrap
-        ${active 
-          ? 'text-cyan-400 border-b-2 border-cyan-400 bg-cyan-500/10' 
-          : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-        }
+        nav-tab flex items-center gap-2 whitespace-nowrap
+        ${active ? 'active' : ''}
       `}
       style={{ opacity: 0 }}
     >
-      <span>{icon}</span>
+      <span className="text-base">{icon}</span>
       <span>{label}</span>
     </button>
   );

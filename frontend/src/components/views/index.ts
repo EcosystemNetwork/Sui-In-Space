@@ -1,6 +1,6 @@
-export { StarMapView } from './StarMapView';
-export { HangarView } from './HangarView';
+export { SpaceCommandView } from './SpaceCommandView';
 export { AgentsView } from './AgentsView';
 export { MissionsView } from './MissionsView';
-export { DefiView } from './DefiView';
-export { GovernanceView } from './GovernanceView';
+export { MarketView } from './MarketView';
+export { FarmView } from './FarmView';
+export { DAOView } from './DAOView';

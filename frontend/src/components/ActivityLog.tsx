@@ -4,7 +4,7 @@ import anime from 'animejs';
 /**
  * Activity Log Component
  * Shows recent game activity events
- * Enhanced with anime.js animations
+ * Redesigned with Space Command theme
  */
 
 interface ActivityEvent {
@@ -81,7 +81,7 @@ const EVENT_COLORS: Record<ActivityEvent['type'], string> = {
   mission: 'text-yellow-400',
   battle: 'text-red-400',
   levelup: 'text-green-400',
-  reward: 'text-cyan-400',
+  reward: 'text-galactic-cyan',
   purchase: 'text-orange-400',
   stake: 'text-purple-400',
   governance: 'text-blue-400',
@@ -113,14 +113,14 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ maxEvents = 5, compact
   }, []);
 
   return (
-    <div ref={containerRef} className={`rounded-lg bg-slate-900/80 border border-slate-700 ${compact ? 'p-3' : 'p-4'}`}>
+    <div ref={containerRef} className={`space-panel rounded-lg ${compact ? 'p-3' : 'p-4'}`}>
       <div className="flex items-center justify-between mb-3">
         <h3 className={`font-bold text-white flex items-center gap-2 ${compact ? 'text-sm' : 'text-lg'}`}>
-          <span className="text-cyan-400">📋</span>
+          <span className="text-galactic-cyan">📋</span>
           Activity Log
         </h3>
         {!compact && (
-          <button className="text-xs text-slate-400 hover:text-cyan-400 transition-colors">
+          <button className="text-xs text-metallic-silver hover:text-galactic-cyan transition-colors">
             View All →
           </button>
         )}
@@ -130,7 +130,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ maxEvents = 5, compact
         {events.map((event) => (
           <div
             key={event.id}
-            className={`event-item flex items-start gap-3 ${compact ? 'p-2' : 'p-3'} rounded bg-slate-800/50 hover:bg-slate-800/80 transition-colors cursor-pointer`}
+            className={`event-item flex items-start gap-3 ${compact ? 'p-2' : 'p-3'} rounded-lg bg-space-border/30 hover:bg-space-border/50 transition-colors cursor-pointer`}
             style={{ opacity: 0 }}
           >
             <span className={compact ? 'text-base' : 'text-xl'}>{EVENT_ICONS[event.type]}</span>
@@ -142,7 +142,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ maxEvents = 5, compact
                 </div>
               )}
             </div>
-            <div className={`text-slate-500 ${compact ? 'text-xs' : 'text-xs'} whitespace-nowrap`}>
+            <div className={`text-metallic-silver ${compact ? 'text-xs' : 'text-xs'} whitespace-nowrap`}>
               {event.timestamp}
             </div>
           </div>
@@ -150,7 +150,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ maxEvents = 5, compact
       </div>
 
       {!compact && events.length === 0 && (
-        <div className="text-center text-slate-400 py-8">
+        <div className="text-center text-metallic-silver py-8">
           <div className="text-3xl mb-2">📭</div>
           <p>No recent activity</p>
         </div>

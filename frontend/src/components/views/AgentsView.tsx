@@ -183,27 +183,27 @@ export const AgentsView: React.FC = () => {
     <div className="space-y-4">
       {/* Header */}
       <div ref={headerRef} className="flex justify-between items-center" style={{ opacity: 0 }}>
-        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+        <h2 className="font-display text-2xl font-bold text-white flex items-center gap-2 tracking-wide">
           <span className="text-purple-400">🤖</span>
           Agent Barracks
         </h2>
         <div className="flex gap-2">
           <button
             onClick={() => setViewMode('roster')}
-            className={`px-3 py-1.5 rounded text-sm ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               viewMode === 'roster'
                 ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50'
-                : 'bg-slate-700/50 text-slate-400 hover:text-white'
+                : 'space-btn text-metallic-silver'
             }`}
           >
             My Agents
           </button>
           <button
             onClick={() => setViewMode('recruit')}
-            className={`px-3 py-1.5 rounded text-sm ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               viewMode === 'recruit'
                 ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50'
-                : 'bg-slate-700/50 text-slate-400 hover:text-white'
+                : 'space-btn text-metallic-silver'
             }`}
           >
             Recruit

@@ -1,131 +1,247 @@
+/* Import Orbitron font for display text */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Custom scrollbar */
+/* Custom scrollbar - Space Command theme */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.5);
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(34, 211, 238, 0.3);
+  background: #0a0c14;
   border-radius: 4px;
 }
 
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #1a2744 0%, #0d1424 100%);
+  border-radius: 4px;
+  border: 1px solid rgba(34, 211, 238, 0.2);
+}
+
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(34, 211, 238, 0.5);
+  background: linear-gradient(180deg, #243454 0%, #1a2744 100%);
+  border-color: rgba(34, 211, 238, 0.4);
 }
 
-/* Holographic glow effect */
-.holographic-glow {
+/* Space Command Panel Styling */
+.space-panel {
+  background: linear-gradient(135deg, rgba(13, 20, 36, 0.95) 0%, rgba(10, 12, 20, 0.98) 100%);
+  border: 1px solid rgba(26, 39, 68, 0.8);
   box-shadow: 
-    0 0 20px rgba(34, 211, 238, 0.15),
-    0 0 40px rgba(34, 211, 238, 0.1),
-    inset 0 0 20px rgba(34, 211, 238, 0.05);
+    0 0 20px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    inset 0 0 30px rgba(34, 211, 238, 0.03);
 }
 
-/* Text glow */
+/* Metallic Frame Effect */
+.metallic-frame {
+  position: relative;
+  border: 2px solid #1a2744;
+  background: linear-gradient(180deg, rgba(26, 39, 68, 0.4) 0%, rgba(13, 20, 36, 0.8) 100%);
+}
+
+.metallic-frame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  pointer-events: none;
+}
+
+/* Cyan Glow Effects */
+.cyan-glow {
+  box-shadow: 
+    0 0 10px rgba(34, 211, 238, 0.3),
+    0 0 20px rgba(34, 211, 238, 0.2),
+    0 0 30px rgba(34, 211, 238, 0.1);
+}
+
 .text-glow {
-  text-shadow: 0 0 10px currentColor;
+  text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
 }
 
-/* Animated border */
-@keyframes border-pulse {
+.text-glow-sm {
+  text-shadow: 0 0 5px currentColor;
+}
+
+/* Animated border glow */
+@keyframes border-glow {
   0%, 100% {
     border-color: rgba(34, 211, 238, 0.3);
+    box-shadow: 0 0 10px rgba(34, 211, 238, 0.1);
   }
   50% {
     border-color: rgba(34, 211, 238, 0.6);
+    box-shadow: 0 0 20px rgba(34, 211, 238, 0.3);
   }
 }
 
-.border-pulse {
-  animation: border-pulse 2s ease-in-out infinite;
+.border-glow-animate {
+  animation: border-glow 2s ease-in-out infinite;
 }
 
-/* Scanner line animation */
-@keyframes scan {
-  0% {
-    transform: translateY(-100%);
-  }
-  100% {
-    transform: translateY(100vh);
-  }
+/* Space Command Button Styling */
+.space-btn {
+  background: linear-gradient(180deg, #1a2744 0%, #0d1424 100%);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: all 0.2s ease;
 }
 
-.scanner-line {
-  position: fixed;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.5), transparent);
-  animation: scan 4s linear infinite;
+.space-btn:hover {
+  background: linear-gradient(180deg, #243454 0%, #1a2744 100%);
+  border-color: rgba(34, 211, 238, 0.5);
+  box-shadow: 
+    0 4px 20px rgba(34, 211, 238, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.space-btn:active {
+  transform: translateY(0);
+}
+
+/* Action Button Variants */
+.action-btn {
+  @apply space-btn px-4 py-2 rounded-lg font-semibold text-sm;
+}
+
+.action-btn-primary {
+  background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 100%);
+  border-color: rgba(34, 211, 238, 0.5);
+  color: white;
+}
+
+.action-btn-primary:hover {
+  background: linear-gradient(180deg, #38bdf8 0%, #0ea5e9 100%);
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.4);
+}
+
+.action-btn-warning {
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+  border-color: rgba(251, 191, 36, 0.5);
+  color: white;
+}
+
+.action-btn-danger {
+  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: white;
+}
+
+/* Resource Display Badge */
+.resource-badge {
+  @apply flex items-center gap-2 px-3 py-1.5 rounded-lg;
+  background: linear-gradient(180deg, rgba(26, 39, 68, 0.6) 0%, rgba(13, 20, 36, 0.8) 100%);
+  border: 1px solid rgba(26, 39, 68, 0.8);
+}
+
+/* Character/Agent Card */
+.agent-portrait {
+  @apply relative overflow-hidden rounded-lg;
+  background: linear-gradient(180deg, #1a2744 0%, #0d1424 100%);
+  border: 2px solid rgba(34, 211, 238, 0.3);
+}
+
+.agent-portrait::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
   pointer-events: none;
+}
+
+/* Progress Bar - Space Command Style */
+.progress-bar {
+  @apply relative h-2 rounded-full overflow-hidden;
+  background: rgba(26, 39, 68, 0.6);
+}
+
+.progress-bar-fill {
+  @apply h-full rounded-full;
+  background: linear-gradient(90deg, #0ea5e9, #22d3ee);
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+}
+
+.progress-bar-yellow .progress-bar-fill {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+}
+
+.progress-bar-green .progress-bar-fill {
+  background: linear-gradient(90deg, #10b981, #34d399);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
 }
 
 /* Star field animation */
 @keyframes twinkle {
-  0%, 100% {
-    opacity: 0.3;
-  }
-  50% {
-    opacity: 1;
-  }
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.8; }
 }
 
 .star {
   animation: twinkle 3s ease-in-out infinite;
 }
 
-/* Button hover effects */
-.btn-glow:hover {
-  box-shadow: 
-    0 0 20px rgba(34, 211, 238, 0.4),
-    0 0 40px rgba(34, 211, 238, 0.2);
-}
-
-/* Card hover effects */
-.card-hover {
-  transition: all 0.3s ease;
-}
-
-.card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 
-    0 10px 40px rgba(34, 211, 238, 0.15),
-    0 0 20px rgba(34, 211, 238, 0.1);
-}
-
 /* Loading spinner */
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .spinner {
   animation: spin 1s linear infinite;
 }
 
-/* Pulse effect for alerts */
-@keyframes alert-pulse {
-  0%, 100% {
+/* Pulse effect */
+@keyframes pulse-glow {
+  0%, 100% { 
     opacity: 1;
+    box-shadow: 0 0 10px rgba(34, 211, 238, 0.3);
   }
-  50% {
-    opacity: 0.5;
+  50% { 
+    opacity: 0.8;
+    box-shadow: 0 0 20px rgba(34, 211, 238, 0.5);
   }
 }
 
-.alert-pulse {
-  animation: alert-pulse 1s ease-in-out infinite;
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Tab Navigation */
+.nav-tab {
+  @apply relative px-4 py-3 text-sm font-medium transition-all;
+  color: #94a3b8;
+}
+
+.nav-tab:hover {
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.05);
+}
+
+.nav-tab.active {
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.1);
+}
+
+.nav-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #22d3ee, transparent);
 }
 
 /* Base styles */
@@ -137,6 +253,8 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: #060810;
+  color: #e2e8f0;
 }
 
 /* Focus styles for accessibility */
@@ -149,4 +267,45 @@ body {
 ::selection {
   background: rgba(34, 211, 238, 0.3);
   color: white;
+}
+
+/* Utility classes for the gameart theme */
+.font-display {
+  font-family: 'Orbitron', 'Inter', system-ui, sans-serif;
+}
+
+/* Location marker style */
+.location-marker {
+  @apply relative inline-flex items-center gap-2 px-3 py-1.5 rounded;
+  background: rgba(13, 20, 36, 0.9);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+}
+
+.location-marker::before {
+  content: '📍';
+  font-size: 0.875rem;
+}
+
+/* Mission rewards panel */
+.rewards-panel {
+  @apply p-3 rounded-lg;
+  background: linear-gradient(135deg, rgba(13, 20, 36, 0.9) 0%, rgba(10, 12, 20, 0.95) 100%);
+  border: 1px solid rgba(26, 39, 68, 0.8);
+}
+
+/* Dice/Roll button style */
+.roll-btn {
+  @apply relative flex items-center justify-center p-4 rounded-lg;
+  background: linear-gradient(180deg, #1a2744 0%, #0d1424 100%);
+  border: 2px solid rgba(34, 211, 238, 0.4);
+}
+
+.roll-btn::before {
+  content: '🎲';
+  font-size: 2rem;
+}
+
+.roll-btn:hover {
+  border-color: rgba(34, 211, 238, 0.8);
+  box-shadow: 0 0 30px rgba(34, 211, 238, 0.3);
 }

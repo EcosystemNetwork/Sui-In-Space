@@ -259,18 +259,18 @@ export const MissionsView: React.FC = () => {
     <div className="space-y-4">
       {/* Header */}
       <div ref={headerRef} className="flex justify-between items-center" style={{ opacity: 0 }}>
-        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+        <h2 className="font-display text-2xl font-bold text-white flex items-center gap-2 tracking-wide">
           <span className="text-yellow-400">📜</span>
           Mission Board
         </h2>
-        <div className="text-sm text-slate-400">
+        <div className="text-sm text-metallic-silver">
           <span className="text-green-400">{ACTIVE_MISSIONS.length}</span> Active Missions
         </div>
       </div>
 
       {/* Active Missions */}
       {ACTIVE_MISSIONS.length > 0 && (
-        <div ref={activeMissionsRef} className="p-4 rounded-lg bg-slate-900/80 border border-green-500/30" style={{ opacity: 0 }}>
+        <div ref={activeMissionsRef} className="space-panel p-4 rounded-lg border border-green-500/30" style={{ opacity: 0 }}>
           <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
             <span className="text-green-400">▶</span>
             Active Missions
@@ -279,12 +279,12 @@ export const MissionsView: React.FC = () => {
             {ACTIVE_MISSIONS.map((mission) => (
               <div
                 key={mission.id}
-                className="p-3 rounded-lg bg-slate-800/50 border border-green-500/20"
+                className="p-3 rounded-lg bg-space-border/50 border border-green-500/20"
               >
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <h4 className="font-bold text-white">{mission.missionName}</h4>
-                    <p className="text-xs text-slate-400">Agent: {mission.agentName}</p>
+                    <p className="text-xs text-metallic-silver">Agent: {mission.agentName}</p>
                   </div>
                   <div className="text-right">
                     <div className="text-sm text-green-400">{mission.timeRemaining}</div>
