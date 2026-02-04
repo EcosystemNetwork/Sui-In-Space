@@ -273,7 +273,7 @@ export const StarMapView: React.FC = () => {
                   transform: 'translate(-50%, -50%)'
                 }}
               >
-                <div className="w-12 h-12 border-2 border-[#00f0ff]/50 rounded-full animate-ping" />
+                <div className="w-12 h-12 border-2 border-[#00f0ff]/50 rounded-full animate-ping motion-reduce:animate-none" />
               </div>
             )}
           </div>

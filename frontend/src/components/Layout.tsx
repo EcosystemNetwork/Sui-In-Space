@@ -33,6 +33,11 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'governance', icon: '🏛️', label: 'Governance' },
 ];
 
+// Star color variants for the background
+const STAR_COLORS = ['#00f0ff', '#ffffff', '#0080ff'] as const;
+const getStarColor = (index: number): string => STAR_COLORS[index % 3];
+const getStarGlow = (index: number): string => index % 3 === 0 ? '0 0 4px #00f0ff' : 'none';
+
 // Generate deterministic star positions with more variety
 const generateStars = (count: number) => {
   const stars = [];
@@ -182,8 +187,8 @@ export const Layout: React.FC<LayoutProps> = ({
               width: `${star.size}px`,
               height: `${star.size}px`,
               opacity: 0,
-              background: i % 3 === 0 ? '#00f0ff' : i % 3 === 1 ? '#ffffff' : '#0080ff',
-              boxShadow: i % 3 === 0 ? '0 0 4px #00f0ff' : 'none',
+              background: getStarColor(i),
+              boxShadow: getStarGlow(i),
             }}
           />
         ))}
