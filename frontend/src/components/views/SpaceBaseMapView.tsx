@@ -200,6 +200,67 @@ const RARITY_GLOWS = {
   legendary: 'ring-3 ring-yellow-400/70 animate-pulse shadow-lg shadow-yellow-400/30',
 };
 
+// Pre-defined Tailwind classes for district glow colors (JIT-safe)
+const DISTRICT_BORDER_CLASSES: Record<string, { default: string; hover: string; active: string }> = {
+  purple: {
+    default: 'border-purple-500/30',
+    hover: 'border-purple-400 shadow-lg shadow-purple-400/30',
+    active: 'border-purple-400 bg-purple-500/10',
+  },
+  yellow: {
+    default: 'border-yellow-500/30',
+    hover: 'border-yellow-400 shadow-lg shadow-yellow-400/30',
+    active: 'border-yellow-400 bg-yellow-500/10',
+  },
+  cyan: {
+    default: 'border-cyan-500/30',
+    hover: 'border-cyan-400 shadow-lg shadow-cyan-400/30',
+    active: 'border-cyan-400 bg-cyan-500/10',
+  },
+  blue: {
+    default: 'border-blue-500/30',
+    hover: 'border-blue-400 shadow-lg shadow-blue-400/30',
+    active: 'border-blue-400 bg-blue-500/10',
+  },
+  green: {
+    default: 'border-green-500/30',
+    hover: 'border-green-400 shadow-lg shadow-green-400/30',
+    active: 'border-green-400 bg-green-500/10',
+  },
+  orange: {
+    default: 'border-orange-500/30',
+    hover: 'border-orange-400 shadow-lg shadow-orange-400/30',
+    active: 'border-orange-400 bg-orange-500/10',
+  },
+  teal: {
+    default: 'border-teal-500/30',
+    hover: 'border-teal-400 shadow-lg shadow-teal-400/30',
+    active: 'border-teal-400 bg-teal-500/10',
+  },
+  pink: {
+    default: 'border-pink-500/30',
+    hover: 'border-pink-400 shadow-lg shadow-pink-400/30',
+    active: 'border-pink-400 bg-pink-500/10',
+  },
+  violet: {
+    default: 'border-violet-500/30',
+    hover: 'border-violet-400 shadow-lg shadow-violet-400/30',
+    active: 'border-violet-400 bg-violet-500/10',
+  },
+};
+
+const DISTRICT_HOVER_BORDER_CLASSES: Record<string, string> = {
+  purple: 'hover:border-purple-500/50',
+  yellow: 'hover:border-yellow-500/50',
+  cyan: 'hover:border-cyan-500/50',
+  blue: 'hover:border-blue-500/50',
+  green: 'hover:border-green-500/50',
+  orange: 'hover:border-orange-500/50',
+  teal: 'hover:border-teal-500/50',
+  pink: 'hover:border-pink-500/50',
+  violet: 'hover:border-violet-500/50',
+};
+
 // Demo player agents
 const INITIAL_AGENTS: MapAgent[] = [
   {
@@ -553,40 +614,42 @@ export const SpaceBaseMapView: React.FC = () => {
             </svg>
 
             {/* Districts */}
-            {DISTRICTS.map((district) => (
-              <button
-                key={district.id}
-                onClick={(e) => handleDistrictClick(district, e)}
-                onMouseEnter={() => setHoveredDistrict(district)}
-                onMouseLeave={() => setHoveredDistrict(null)}
-                className={`district absolute rounded-lg bg-gradient-to-br ${district.color} border-2 transition-all duration-300 ${
-                  district.isUnlocked
-                    ? 'cursor-pointer hover:scale-105 hover:z-10'
-                    : 'opacity-40 cursor-not-allowed grayscale'
-                } ${
-                  hoveredDistrict?.id === district.id
-                    ? `border-${district.glowColor}-400 shadow-lg shadow-${district.glowColor}-400/30`
-                    : `border-${district.glowColor}-500/30`
-                } ${
-                  showDistrictPanel?.id === district.id
-                    ? 'ring-2 ring-white/50'
-                    : ''
-                }`}
-                style={{
-                  left: `${district.x}%`,
-                  top: `${district.y}%`,
-                  width: `${district.width}%`,
-                  height: `${district.height}%`,
-                  opacity: 0,
-                }}
-              >
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-2">
-                  <span className="text-2xl md:text-3xl mb-1">{district.icon}</span>
-                  <span className="text-[10px] md:text-xs font-bold text-white text-center leading-tight drop-shadow-lg">
-                    {district.name}
-                  </span>
-                  {!district.isUnlocked && (
-                    <span className="text-[8px] text-slate-400 mt-1">🔒 Locked</span>
+            {DISTRICTS.map((district) => {
+              const borderClasses = DISTRICT_BORDER_CLASSES[district.glowColor] || DISTRICT_BORDER_CLASSES.cyan;
+              return (
+                <button
+                  key={district.id}
+                  onClick={(e) => handleDistrictClick(district, e)}
+                  onMouseEnter={() => setHoveredDistrict(district)}
+                  onMouseLeave={() => setHoveredDistrict(null)}
+                  className={`district absolute rounded-lg bg-gradient-to-br ${district.color} border-2 transition-all duration-300 ${
+                    district.isUnlocked
+                      ? 'cursor-pointer hover:scale-105 hover:z-10'
+                      : 'opacity-40 cursor-not-allowed grayscale'
+                  } ${
+                    hoveredDistrict?.id === district.id
+                      ? borderClasses.hover
+                      : borderClasses.default
+                  } ${
+                    showDistrictPanel?.id === district.id
+                      ? 'ring-2 ring-white/50'
+                      : ''
+                  }`}
+                  style={{
+                    left: `${district.x}%`,
+                    top: `${district.y}%`,
+                    width: `${district.width}%`,
+                    height: `${district.height}%`,
+                    opacity: 0,
+                  }}
+                >
+                  <div className="absolute inset-0 flex flex-col items-center justify-center p-2">
+                    <span className="text-2xl md:text-3xl mb-1">{district.icon}</span>
+                    <span className="text-[10px] md:text-xs font-bold text-white text-center leading-tight drop-shadow-lg">
+                      {district.name}
+                    </span>
+                    {!district.isUnlocked && (
+                      <span className="text-[8px] text-slate-400 mt-1">🔒 Locked</span>
                   )}
                 </div>
                 
@@ -595,7 +658,8 @@ export const SpaceBaseMapView: React.FC = () => {
                   <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                 )}
               </button>
-            ))}
+              );
+            })}
 
             {/* NPCs */}
             {npcs.map((npc) => (
@@ -842,25 +906,29 @@ export const SpaceBaseMapView: React.FC = () => {
 
       {/* District Quick Navigation */}
       <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2">
-        {DISTRICTS.map((district) => (
-          <button
-            key={district.id}
-            onClick={() => setShowDistrictPanel(district)}
-            disabled={!district.isUnlocked}
-            className={`p-2 rounded-lg border text-center transition-all ${
-              district.isUnlocked
-                ? `bg-slate-800/50 border-slate-700 hover:border-${district.glowColor}-500/50 hover:bg-slate-800`
-                : 'bg-slate-900/50 border-slate-800 opacity-50 cursor-not-allowed'
-            } ${
-              showDistrictPanel?.id === district.id
-                ? `border-${district.glowColor}-400 bg-${district.glowColor}-500/10`
-                : ''
-            }`}
-          >
-            <span className="text-xl block mb-1">{district.icon}</span>
-            <span className="text-[10px] text-slate-300 leading-tight block">{district.name}</span>
-          </button>
-        ))}
+        {DISTRICTS.map((district) => {
+          const borderClasses = DISTRICT_BORDER_CLASSES[district.glowColor] || DISTRICT_BORDER_CLASSES.cyan;
+          const hoverBorderClass = DISTRICT_HOVER_BORDER_CLASSES[district.glowColor] || DISTRICT_HOVER_BORDER_CLASSES.cyan;
+          return (
+            <button
+              key={district.id}
+              onClick={() => setShowDistrictPanel(district)}
+              disabled={!district.isUnlocked}
+              className={`p-2 rounded-lg border text-center transition-all ${
+                district.isUnlocked
+                  ? `bg-slate-800/50 border-slate-700 ${hoverBorderClass} hover:bg-slate-800`
+                  : 'bg-slate-900/50 border-slate-800 opacity-50 cursor-not-allowed'
+              } ${
+                showDistrictPanel?.id === district.id
+                  ? borderClasses.active
+                  : ''
+              }`}
+            >
+              <span className="text-xl block mb-1">{district.icon}</span>
+              <span className="text-[10px] text-slate-300 leading-tight block">{district.name}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
