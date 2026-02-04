@@ -134,7 +134,7 @@ To get everything working on Vercel:
   - `VITE_PACKAGE_ID` - The deployed Move package ID (once contracts are deployed)
 - [ ] **Deploy Contracts**: Deploy Move smart contracts to Sui network
   - Run `cd contracts && sui move build` to build contracts
-  - Deploy using `sui client publish --gas-budget 100000000`
+  - Deploy using `sui client publish --gas-budget <BUDGET>` (adjust gas budget based on contract size; see [Sui Gas Docs](https://docs.sui.io/concepts/tokenomics/gas-in-sui))
   - Update frontend with the deployed package IDs
 - [ ] **Configure Wallet Integration**: Set up Sui wallet connection
 - [ ] **Set Up Indexing**: Configure real-time object state indexing for game data
