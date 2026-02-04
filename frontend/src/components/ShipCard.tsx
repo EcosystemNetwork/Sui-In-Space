@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
+import anime from 'animejs';
 import type { Ship, ShipClass } from '../types';
 
 /**
  * Ship Card Component
  * Displays ship information with holographic UI styling
+ * Enhanced with anime.js animations
  */
 
 interface ShipCardProps {
@@ -36,24 +38,116 @@ export const ShipCard: React.FC<ShipCardProps> = ({ ship, isSelected, onClick })
   const healthPercentage = (ship.currentHealth / ship.maxHealth) * 100;
   const fuelPercentage = (ship.fuel / ship.maxFuel) * 100;
   const combatRating = Math.floor((ship.maxHealth / 10) + (ship.firepower * 2) + (ship.speed / 5));
+  
+  const cardRef = useRef<HTMLDivElement>(null);
+  const healthBarRef = useRef<HTMLDivElement>(null);
+  const fuelBarRef = useRef<HTMLDivElement>(null);
+  const cornersRef = useRef<HTMLDivElement[]>([]);
+  
+  // Animate progress bars on mount
+  useEffect(() => {
+    if (healthBarRef.current) {
+      anime({
+        targets: healthBarRef.current,
+        width: [`0%`, `${healthPercentage}%`],
+        duration: 800,
+        easing: 'easeOutCubic',
+        delay: 200,
+      });
+    }
+    if (fuelBarRef.current) {
+      anime({
+        targets: fuelBarRef.current,
+        width: [`0%`, `${fuelPercentage}%`],
+        duration: 800,
+        easing: 'easeOutCubic',
+        delay: 300,
+      });
+    }
+  }, [healthPercentage, fuelPercentage]);
+  
+  // Animate selection state
+  useEffect(() => {
+    if (cardRef.current) {
+      if (isSelected) {
+        anime({
+          targets: cardRef.current,
+          scale: [1, 1.02],
+          duration: 200,
+          easing: 'easeOutCubic',
+        });
+        // Animate corners glow
+        anime({
+          targets: cornersRef.current,
+          borderColor: ['rgba(96, 165, 250, 0.5)', 'rgba(96, 165, 250, 1)'],
+          duration: 300,
+          easing: 'easeOutCubic',
+        });
+      } else {
+        anime({
+          targets: cardRef.current,
+          scale: 1,
+          duration: 200,
+          easing: 'easeOutCubic',
+        });
+      }
+    }
+  }, [isSelected]);
+  
+  const handleMouseEnter = () => {
+    if (cardRef.current && !isSelected) {
+      anime({
+        targets: cardRef.current,
+        translateY: -4,
+        duration: 200,
+        easing: 'easeOutCubic',
+      });
+    }
+  };
+  
+  const handleMouseLeave = () => {
+    if (cardRef.current && !isSelected) {
+      anime({
+        targets: cardRef.current,
+        translateY: 0,
+        duration: 200,
+        easing: 'easeOutCubic',
+      });
+    }
+  };
+  
+  const handleClick = () => {
+    if (cardRef.current) {
+      anime({
+        targets: cardRef.current,
+        scale: [1, 0.98, 1.02],
+        duration: 200,
+        easing: 'easeInOutQuad',
+      });
+    }
+    onClick?.();
+  };
 
   return (
     <div
+      ref={cardRef}
       className={`
-        relative p-4 rounded-lg border cursor-pointer transition-all duration-300
+        relative p-4 rounded-lg border cursor-pointer
         bg-gradient-to-br from-slate-900/90 to-slate-800/90
         ${isSelected 
           ? 'border-blue-400 shadow-lg shadow-blue-400/20' 
           : 'border-slate-700 hover:border-blue-400/50'
         }
       `}
-      onClick={onClick}
+      onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {/* Holographic corner accents */}
-      <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-blue-400 rounded-tl" />
-      <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-blue-400 rounded-tr" />
-      <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-blue-400 rounded-bl" />
-      <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-blue-400 rounded-br" />
+      <div ref={el => { if (el) cornersRef.current[0] = el; }} className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-blue-400 rounded-tl" />
+      <div ref={el => { if (el) cornersRef.current[1] = el; }} className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-blue-400 rounded-tr" />
+      <div ref={el => { if (el) cornersRef.current[2] = el; }} className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-blue-400 rounded-bl" />
+      <div ref={el => { if (el) cornersRef.current[3] = el; }} className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-blue-400 rounded-br" />
 
       {/* Header */}
       <div className="flex justify-between items-start mb-3">
@@ -83,10 +177,11 @@ export const ShipCard: React.FC<ShipCardProps> = ({ ship, isSelected, onClick })
           </div>
           <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
             <div 
-              className={`h-full rounded-full transition-all duration-500 ${
+              ref={healthBarRef}
+              className={`h-full rounded-full ${
                 healthPercentage < 30 ? 'bg-red-500' : healthPercentage < 60 ? 'bg-yellow-500' : 'bg-green-500'
               }`}
-              style={{ width: `${healthPercentage}%` }}
+              style={{ width: '0%' }}
             />
           </div>
         </div>
@@ -100,10 +195,11 @@ export const ShipCard: React.FC<ShipCardProps> = ({ ship, isSelected, onClick })
           </div>
           <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
             <div 
-              className={`h-full rounded-full transition-all duration-500 ${
+              ref={fuelBarRef}
+              className={`h-full rounded-full ${
                 fuelPercentage < 20 ? 'bg-red-500' : 'bg-cyan-500'
               }`}
-              style={{ width: `${fuelPercentage}%` }}
+              style={{ width: '0%' }}
             />
           </div>
         </div>

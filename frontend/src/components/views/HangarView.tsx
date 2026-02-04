@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import anime from 'animejs';
 import { ShipCard } from '../ShipCard';
 import type { Ship } from '../../types';
 import { ShipClass } from '../../types';
@@ -6,6 +7,7 @@ import { ShipClass } from '../../types';
 /**
  * Hangar View Component
  * Ship management, module installation, docking
+ * Enhanced with anime.js animations
  */
 
 // Demo ships for display
@@ -85,11 +87,66 @@ const SHIP_CLASS_BLUEPRINTS = [
 export const HangarView: React.FC = () => {
   const [selectedShip, setSelectedShip] = useState<Ship | null>(null);
   const [viewMode, setViewMode] = useState<'fleet' | 'build'>('fleet');
+  
+  const headerRef = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const actionsRef = useRef<HTMLDivElement>(null);
+  
+  // Initial entrance animations
+  useEffect(() => {
+    if (headerRef.current) {
+      anime({
+        targets: headerRef.current,
+        translateY: [-20, 0],
+        opacity: [0, 1],
+        duration: 600,
+        easing: 'easeOutCubic',
+      });
+    }
+    
+    if (statsRef.current) {
+      const statCards = statsRef.current.querySelectorAll('.stat-card');
+      anime({
+        targets: statCards,
+        translateY: [20, 0],
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(80, { start: 200 }),
+        easing: 'easeOutCubic',
+      });
+    }
+    
+    if (gridRef.current) {
+      const cards = gridRef.current.querySelectorAll('.ship-card-wrapper');
+      anime({
+        targets: cards,
+        translateY: [30, 0],
+        opacity: [0, 1],
+        duration: 600,
+        delay: anime.stagger(100, { start: 400 }),
+        easing: 'easeOutCubic',
+      });
+    }
+  }, [viewMode]);
+  
+  // Animate actions panel when ship is selected
+  useEffect(() => {
+    if (actionsRef.current && selectedShip) {
+      anime({
+        targets: actionsRef.current,
+        translateY: [20, 0],
+        opacity: [0, 1],
+        duration: 400,
+        easing: 'easeOutCubic',
+      });
+    }
+  }, [selectedShip]);
 
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div ref={headerRef} className="flex justify-between items-center" style={{ opacity: 0 }}>
         <h2 className="text-2xl font-bold text-white flex items-center gap-2">
           <span className="text-blue-400">🚀</span>
           Ship Hangar
@@ -121,40 +178,41 @@ export const HangarView: React.FC = () => {
       {viewMode === 'fleet' ? (
         <>
           {/* Fleet Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
+          <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="stat-card p-3 rounded-lg bg-blue-500/10 border border-blue-500/30" style={{ opacity: 0 }}>
               <div className="text-2xl font-bold text-blue-400">{DEMO_SHIPS.length}</div>
               <div className="text-xs text-slate-400">Total Ships</div>
             </div>
-            <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+            <div className="stat-card p-3 rounded-lg bg-green-500/10 border border-green-500/30" style={{ opacity: 0 }}>
               <div className="text-2xl font-bold text-green-400">{DEMO_SHIPS.filter(s => s.isDocked).length}</div>
               <div className="text-xs text-slate-400">Docked</div>
             </div>
-            <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/30">
+            <div className="stat-card p-3 rounded-lg bg-orange-500/10 border border-orange-500/30" style={{ opacity: 0 }}>
               <div className="text-2xl font-bold text-orange-400">{DEMO_SHIPS.reduce((sum, s) => sum + s.firepower, 0)}</div>
               <div className="text-xs text-slate-400">Total Firepower</div>
             </div>
-            <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
+            <div className="stat-card p-3 rounded-lg bg-purple-500/10 border border-purple-500/30" style={{ opacity: 0 }}>
               <div className="text-2xl font-bold text-purple-400">{DEMO_SHIPS.reduce((sum, s) => sum + s.cargoCapacity, 0)}</div>
               <div className="text-xs text-slate-400">Cargo Capacity</div>
             </div>
           </div>
 
           {/* Ship Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {DEMO_SHIPS.map((ship) => (
-              <ShipCard
-                key={ship.id}
-                ship={ship}
-                isSelected={selectedShip?.id === ship.id}
-                onClick={() => setSelectedShip(ship)}
-              />
+              <div key={ship.id} className="ship-card-wrapper" style={{ opacity: 0 }}>
+                <ShipCard
+                  ship={ship}
+                  isSelected={selectedShip?.id === ship.id}
+                  onClick={() => setSelectedShip(ship)}
+                />
+              </div>
             ))}
           </div>
 
           {/* Selected Ship Actions */}
           {selectedShip && (
-            <div className="p-4 rounded-lg bg-slate-900/80 border border-blue-500/30">
+            <div ref={actionsRef} className="p-4 rounded-lg bg-slate-900/80 border border-blue-500/30" style={{ opacity: 0 }}>
               <h3 className="text-lg font-bold text-white mb-3">Ship Actions: {selectedShip.name}</h3>
               <div className="flex flex-wrap gap-2">
                 <button className="px-4 py-2 rounded bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/30 transition-colors text-sm">

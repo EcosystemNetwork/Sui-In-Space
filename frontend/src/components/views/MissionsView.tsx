@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import anime from 'animejs';
 import { MissionType, MissionStatus } from '../../types';
 
 /**
  * Missions View Component
  * Mission board with available quests and active missions
+ * Enhanced with anime.js animations
  */
 
 interface DemoMission {
@@ -171,11 +173,92 @@ export const MissionsView: React.FC = () => {
     : AVAILABLE_MISSIONS;
 
   const getDifficultyStars = (difficulty: number) => '★'.repeat(difficulty) + '☆'.repeat(5 - difficulty);
+  
+  const headerRef = useRef<HTMLDivElement>(null);
+  const activeMissionsRef = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
+  const filterRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  
+  // Initial entrance animations
+  useEffect(() => {
+    if (headerRef.current) {
+      anime({
+        targets: headerRef.current,
+        translateY: [-20, 0],
+        opacity: [0, 1],
+        duration: 600,
+        easing: 'easeOutCubic',
+      });
+    }
+    
+    if (activeMissionsRef.current) {
+      anime({
+        targets: activeMissionsRef.current,
+        translateX: [-30, 0],
+        opacity: [0, 1],
+        duration: 600,
+        delay: 200,
+        easing: 'easeOutCubic',
+      });
+      
+      // Animate progress bar
+      const progressBar = activeMissionsRef.current.querySelector('.progress-bar-fill');
+      if (progressBar) {
+        anime({
+          targets: progressBar,
+          width: ['0%', '67%'],
+          duration: 1200,
+          delay: 400,
+          easing: 'easeOutCubic',
+        });
+      }
+    }
+    
+    if (statsRef.current) {
+      const statCards = statsRef.current.querySelectorAll('.stat-card');
+      anime({
+        targets: statCards,
+        translateY: [20, 0],
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(80, { start: 300 }),
+        easing: 'easeOutCubic',
+      });
+    }
+    
+    if (filterRef.current) {
+      const buttons = filterRef.current.querySelectorAll('button');
+      anime({
+        targets: buttons,
+        translateX: [-20, 0],
+        opacity: [0, 1],
+        duration: 400,
+        delay: anime.stagger(50, { start: 500 }),
+        easing: 'easeOutCubic',
+      });
+    }
+  }, []);
+  
+  // Animate grid when filter changes
+  useEffect(() => {
+    if (gridRef.current) {
+      const cards = gridRef.current.querySelectorAll('.mission-card');
+      anime({
+        targets: cards,
+        translateY: [30, 0],
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(80),
+        easing: 'easeOutCubic',
+      });
+    }
+  }, [filterType]);
 
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div ref={headerRef} className="flex justify-between items-center" style={{ opacity: 0 }}>
         <h2 className="text-2xl font-bold text-white flex items-center gap-2">
           <span className="text-yellow-400">📜</span>
           Mission Board
@@ -187,7 +270,7 @@ export const MissionsView: React.FC = () => {
 
       {/* Active Missions */}
       {ACTIVE_MISSIONS.length > 0 && (
-        <div className="p-4 rounded-lg bg-slate-900/80 border border-green-500/30">
+        <div ref={activeMissionsRef} className="p-4 rounded-lg bg-slate-900/80 border border-green-500/30" style={{ opacity: 0 }}>
           <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
             <span className="text-green-400">▶</span>
             Active Missions
@@ -210,8 +293,8 @@ export const MissionsView: React.FC = () => {
                 </div>
                 <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-green-500 rounded-full transition-all duration-500"
-                    style={{ width: `${mission.progress}%` }}
+                    className="progress-bar-fill h-full bg-green-500 rounded-full"
+                    style={{ width: '0%' }}
                   />
                 </div>
                 <div className="flex justify-between items-center mt-2 text-xs text-slate-400">
@@ -227,27 +310,27 @@ export const MissionsView: React.FC = () => {
       )}
 
       {/* Mission Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+      <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="stat-card p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30" style={{ opacity: 0 }}>
           <div className="text-2xl font-bold text-yellow-400">{AVAILABLE_MISSIONS.length}</div>
           <div className="text-xs text-slate-400">Available</div>
         </div>
-        <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+        <div className="stat-card p-3 rounded-lg bg-green-500/10 border border-green-500/30" style={{ opacity: 0 }}>
           <div className="text-2xl font-bold text-green-400">{ACTIVE_MISSIONS.length}</div>
           <div className="text-xs text-slate-400">In Progress</div>
         </div>
-        <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
+        <div className="stat-card p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30" style={{ opacity: 0 }}>
           <div className="text-2xl font-bold text-cyan-400">47</div>
           <div className="text-xs text-slate-400">Completed</div>
         </div>
-        <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/30">
+        <div className="stat-card p-3 rounded-lg bg-orange-500/10 border border-orange-500/30" style={{ opacity: 0 }}>
           <div className="text-2xl font-bold text-orange-400">92%</div>
           <div className="text-xs text-slate-400">Success Rate</div>
         </div>
       </div>
 
       {/* Type Filter */}
-      <div className="flex flex-wrap gap-2">
+      <div ref={filterRef} className="flex flex-wrap gap-2">
         <button
           onClick={() => setFilterType(null)}
           className={`px-3 py-1.5 rounded text-xs ${
@@ -277,17 +360,18 @@ export const MissionsView: React.FC = () => {
       </div>
 
       {/* Available Missions Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredMissions.map((mission) => {
           return (
             <div
               key={mission.id}
               onClick={() => setSelectedMission(selectedMission?.id === mission.id ? null : mission)}
-              className={`p-4 rounded-lg bg-slate-900/80 border cursor-pointer transition-all ${
+              className={`mission-card p-4 rounded-lg bg-slate-900/80 border cursor-pointer ${
                 selectedMission?.id === mission.id
                   ? MISSION_CARD_SELECTED_CLASSES[mission.type]
                   : 'border-slate-700 hover:border-slate-600'
               }`}
+              style={{ opacity: 0 }}
             >
               {/* Header */}
               <div className="flex justify-between items-start mb-3">
