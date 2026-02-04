@@ -1,15 +1,68 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 /**
  * Main Application Layout Component
  * Provides the holographic UI frame for the game
  */
 
+export type TabType = 'map' | 'hangar' | 'agents' | 'missions' | 'defi' | 'governance';
+
 interface LayoutProps {
   children: React.ReactNode;
+  activeTab: TabType;
+  onTabChange: (tab: TabType) => void;
+  galacticBalance?: number;
+  energyLevel?: number;
+  playerLevel?: number;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children }) => {
+interface NavItem {
+  id: TabType;
+  icon: string;
+  label: string;
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { id: 'map', icon: '🗺️', label: 'Star Map' },
+  { id: 'hangar', icon: '🚀', label: 'Hangar' },
+  { id: 'agents', icon: '🤖', label: 'Agents' },
+  { id: 'missions', icon: '📜', label: 'Missions' },
+  { id: 'defi', icon: '⚡', label: 'DeFi' },
+  { id: 'governance', icon: '🏛️', label: 'Governance' },
+];
+
+// Generate deterministic star positions
+const generateStars = (count: number) => {
+  const stars = [];
+  for (let i = 0; i < count; i++) {
+    // Use deterministic values based on index
+    const seed1 = ((i * 17) % 100);
+    const seed2 = ((i * 31) % 100);
+    const seed3 = ((i * 7) % 3);
+    const seed4 = (2 + ((i * 13) % 3));
+    const seed5 = (0.2 + ((i * 11) % 50) / 100);
+    stars.push({
+      left: seed1,
+      top: seed2,
+      delay: seed3,
+      duration: seed4,
+      opacity: seed5,
+    });
+  }
+  return stars;
+};
+
+export const Layout: React.FC<LayoutProps> = ({ 
+  children, 
+  activeTab, 
+  onTabChange,
+  galacticBalance = 125000,
+  energyLevel = 85,
+  playerLevel = 15,
+}) => {
+  // Memoize stars to prevent regeneration on re-renders
+  const stars = useMemo(() => generateStars(100), []);
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       {/* Background Effects */}
@@ -18,16 +71,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       
       {/* Animated Stars Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        {[...Array(100)].map((_, i) => (
+        {stars.map((star, i) => (
           <div
             key={i}
             className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
-              animationDuration: `${2 + Math.random() * 3}s`,
-              opacity: Math.random() * 0.5 + 0.2,
+              left: `${star.left}%`,
+              top: `${star.top}%`,
+              animationDelay: `${star.delay}s`,
+              animationDuration: `${star.duration}s`,
+              opacity: star.opacity,
             }}
           />
         ))}
@@ -52,6 +105,24 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </div>
               </div>
 
+              {/* Player Stats Bar */}
+              <div className="hidden md:flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-slate-800/50 border border-slate-700">
+                  <span className="text-cyan-400">💎</span>
+                  <span className="text-white font-medium">{galacticBalance.toLocaleString()}</span>
+                  <span className="text-slate-400">GALACTIC</span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-slate-800/50 border border-slate-700">
+                  <span className="text-yellow-400">⚡</span>
+                  <span className="text-white font-medium">{energyLevel}/100</span>
+                  <span className="text-slate-400">Energy</span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-slate-800/50 border border-slate-700">
+                  <span className="text-purple-400">⭐</span>
+                  <span className="text-white font-medium">Lv.{playerLevel}</span>
+                </div>
+              </div>
+
               {/* Wallet Connection Placeholder */}
               <button className="px-4 py-2 rounded-lg bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/30 transition-colors">
                 Connect Wallet
@@ -63,13 +134,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Navigation */}
         <nav className="border-b border-slate-700/50 bg-slate-900/50 backdrop-blur-sm">
           <div className="container mx-auto px-4">
-            <div className="flex items-center gap-1">
-              <NavTab icon="🗺️" label="Star Map" active />
-              <NavTab icon="🚀" label="Hangar" />
-              <NavTab icon="🤖" label="Agents" />
-              <NavTab icon="📜" label="Missions" />
-              <NavTab icon="⚡" label="DeFi" />
-              <NavTab icon="🏛️" label="Governance" />
+            <div className="flex items-center gap-1 overflow-x-auto">
+              {NAV_ITEMS.map((item) => (
+                <NavTab
+                  key={item.id}
+                  icon={item.icon}
+                  label={item.label}
+                  active={activeTab === item.id}
+                  onClick={() => onTabChange(item.id)}
+                />
+              ))}
             </div>
           </div>
         </nav>
@@ -82,12 +156,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Footer */}
         <footer className="border-t border-slate-800 bg-slate-900/80 backdrop-blur-md">
           <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between text-sm text-slate-400">
+            <div className="flex items-center justify-between text-sm text-slate-400 flex-wrap gap-2">
               <div className="flex items-center gap-4">
                 <span>Current Epoch: 12,847</span>
-                <span className="text-cyan-400">●</span>
+                <span className="text-cyan-400 hidden sm:inline">●</span>
                 <span>GALACTIC: $0.042</span>
-                <span className="text-cyan-400">●</span>
+                <span className="text-cyan-400 hidden sm:inline">●</span>
                 <span>TVL: $12.4M</span>
               </div>
               <div className="flex items-center gap-4">
@@ -114,12 +188,14 @@ interface NavTabProps {
   icon: string;
   label: string;
   active?: boolean;
+  onClick?: () => void;
 }
 
-const NavTab: React.FC<NavTabProps> = ({ icon, label, active }) => (
+const NavTab: React.FC<NavTabProps> = ({ icon, label, active, onClick }) => (
   <button
+    onClick={onClick}
     className={`
-      px-4 py-3 flex items-center gap-2 text-sm font-medium transition-colors
+      px-4 py-3 flex items-center gap-2 text-sm font-medium transition-colors whitespace-nowrap
       ${active 
         ? 'text-cyan-400 border-b-2 border-cyan-400 bg-cyan-500/10' 
         : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
