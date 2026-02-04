@@ -51,7 +51,7 @@ const SPACE_COMMAND_LOCATIONS: Location[] = [
   },
   {
     id: 'mission-control-2',
-    name: 'Mision Control',
+    name: 'Mission Control',
     icon: '📡',
     description: 'Secondary command center',
     position: { x: 10, y: 70 },
