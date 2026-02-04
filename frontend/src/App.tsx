@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Layout, { TabType } from './components/Layout';
-import { StarMapView, HangarView, AgentsView, MissionsView, DefiView, GovernanceView } from './components/views';
+import { StarMapView, HangarView, AgentsView, MissionsView, DefiView, GovernanceView, SpaceBaseMapView } from './components/views';
 import { ActivityLog } from './components/ActivityLog';
 
 /**
@@ -8,10 +8,12 @@ import { ActivityLog } from './components/ActivityLog';
  * Implements the full game UI as per design specs
  */
 function App() {
-  const [activeTab, setActiveTab] = useState<TabType>('map');
+  const [activeTab, setActiveTab] = useState<TabType>('base');
 
   const renderView = () => {
     switch (activeTab) {
+      case 'base':
+        return <SpaceBaseMapView />;
       case 'map':
         return <StarMapView />;
       case 'hangar':
@@ -25,7 +27,7 @@ function App() {
       case 'governance':
         return <GovernanceView />;
       default:
-        return <StarMapView />;
+        return <SpaceBaseMapView />;
     }
   };
 

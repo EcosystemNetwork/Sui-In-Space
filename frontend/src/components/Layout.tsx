@@ -7,7 +7,7 @@ import anime from 'animejs';
  * Enhanced with anime.js animations
  */
 
-export type TabType = 'map' | 'hangar' | 'agents' | 'missions' | 'defi' | 'governance';
+export type TabType = 'base' | 'map' | 'hangar' | 'agents' | 'missions' | 'defi' | 'governance';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -25,6 +25,7 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
+  { id: 'base', icon: '🛰️', label: 'Space Base' },
   { id: 'map', icon: '🗺️', label: 'Star Map' },
   { id: 'hangar', icon: '🚀', label: 'Hangar' },
   { id: 'agents', icon: '🤖', label: 'Agents' },
