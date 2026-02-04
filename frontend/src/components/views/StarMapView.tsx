@@ -4,7 +4,7 @@ import anime from 'animejs';
 /**
  * Star Map View Component
  * Galaxy navigation and system information
- * Enhanced with anime.js animations
+ * Enhanced with anime.js animations and futuristic sci-fi HUD styling
  */
 
 interface StarSystem {
@@ -31,11 +31,19 @@ const DEMO_SYSTEMS: StarSystem[] = [
 ];
 
 const TYPE_COLORS = {
-  terran: 'bg-green-400',
-  gas: 'bg-orange-400',
-  ice: 'bg-cyan-400',
-  desert: 'bg-yellow-400',
-  volcanic: 'bg-red-400',
+  terran: 'bg-[#00ff9d]',
+  gas: 'bg-[#ff9500]',
+  ice: 'bg-[#00f0ff]',
+  desert: 'bg-[#ffd60a]',
+  volcanic: 'bg-[#ff2d55]',
+};
+
+const TYPE_GLOW = {
+  terran: 'shadow-[0_0_10px_rgba(0,255,157,0.6)]',
+  gas: 'shadow-[0_0_10px_rgba(255,149,0,0.6)]',
+  ice: 'shadow-[0_0_10px_rgba(0,240,255,0.6)]',
+  desert: 'shadow-[0_0_10px_rgba(255,214,10,0.6)]',
+  volcanic: 'shadow-[0_0_10px_rgba(255,45,85,0.6)]',
 };
 
 const TYPE_ICONS = {
@@ -143,27 +151,27 @@ export const StarMapView: React.FC = () => {
     <div className="space-y-4">
       {/* Header */}
       <div ref={headerRef} className="flex justify-between items-center" style={{ opacity: 0 }}>
-        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-          <span className="text-cyan-400">🗺️</span>
-          Galactic Star Map
+        <h2 className="text-2xl font-display font-bold text-[#00f0ff] flex items-center gap-2 tracking-wider">
+          <span>🗺️</span>
+          GALACTIC STAR MAP
         </h2>
         <div className="flex gap-2">
           <button
             onClick={() => setViewMode('galaxy')}
-            className={`px-3 py-1.5 rounded text-sm ${
+            className={`px-4 py-2 rounded text-sm font-display font-semibold tracking-wider uppercase ${
               viewMode === 'galaxy'
-                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
-                : 'bg-slate-700/50 text-slate-400 hover:text-white'
+                ? 'bg-[#00f0ff]/20 text-[#00f0ff] border border-[#00f0ff]/50'
+                : 'bg-[#001a30]/50 text-[#00f0ff]/50 border border-[#00f0ff]/20 hover:text-[#00f0ff]'
             }`}
           >
             Galaxy View
           </button>
           <button
             onClick={() => setViewMode('system')}
-            className={`px-3 py-1.5 rounded text-sm ${
+            className={`px-4 py-2 rounded text-sm font-display font-semibold tracking-wider uppercase ${
               viewMode === 'system'
-                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
-                : 'bg-slate-700/50 text-slate-400 hover:text-white'
+                ? 'bg-[#00f0ff]/20 text-[#00f0ff] border border-[#00f0ff]/50'
+                : 'bg-[#001a30]/50 text-[#00f0ff]/50 border border-[#00f0ff]/20 hover:text-[#00f0ff]'
             }`}
           >
             System View
@@ -175,13 +183,13 @@ export const StarMapView: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Star Map */}
         <div className="lg:col-span-3">
-          <div ref={mapRef} className="relative aspect-[16/9] bg-slate-900/80 rounded-lg border border-slate-700 overflow-hidden" style={{ opacity: 0 }}>
+          <div ref={mapRef} className="relative aspect-[16/9] hud-panel hud-corners hud-corners-bottom rounded-lg overflow-hidden" style={{ opacity: 0 }}>
             {/* Grid overlay */}
-            <div className="absolute inset-0 opacity-20">
-              <svg className="w-full h-full">
+            <div className="absolute inset-0">
+              <svg className="w-full h-full opacity-30">
                 <defs>
                   <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(34, 211, 238, 0.3)" strokeWidth="1"/>
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(0, 240, 255, 0.2)" strokeWidth="1"/>
                   </pattern>
                 </defs>
                 <rect width="100%" height="100%" fill="url(#grid)" />
@@ -200,8 +208,8 @@ export const StarMapView: React.FC = () => {
                     y1={`${system.y}%`}
                     x2={`${nextSystem.x}%`}
                     y2={`${nextSystem.y}%`}
-                    stroke="rgba(34, 211, 238, 0.3)"
-                    strokeWidth="2"
+                    stroke="rgba(0, 240, 255, 0.3)"
+                    strokeWidth="1"
                     strokeDasharray="8 4"
                   />
                 );
@@ -218,16 +226,16 @@ export const StarMapView: React.FC = () => {
                 }`}
                 style={{ left: `${system.x}%`, top: `${system.y}%`, opacity: 0 }}
               >
-                <div className="relative">
+                <div className="relative group">
                   <div
-                    className={`w-4 h-4 rounded-full ${TYPE_COLORS[system.type]} ${
-                      selectedSystem?.id === system.id ? 'ring-2 ring-cyan-400 ring-offset-2 ring-offset-slate-900' : ''
-                    } ${system.claimed ? 'opacity-100' : 'opacity-50'}`}
+                    className={`w-4 h-4 rounded-full ${TYPE_COLORS[system.type]} ${TYPE_GLOW[system.type]} ${
+                      selectedSystem?.id === system.id ? 'ring-2 ring-[#00f0ff] ring-offset-2 ring-offset-[#000a14]' : ''
+                    } ${system.claimed ? 'opacity-100' : 'opacity-50'} transition-all group-hover:scale-125`}
                   />
                   {system.playerOwned && (
-                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-cyan-400 rounded-full" />
+                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-[#00f0ff] rounded-full animate-pulse" />
                   )}
-                  <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-slate-400 whitespace-nowrap">
+                  <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-[#00f0ff]/70 whitespace-nowrap font-mono">
                     {system.name}
                   </span>
                 </div>
@@ -235,78 +243,95 @@ export const StarMapView: React.FC = () => {
             ))}
 
             {/* Legend */}
-            <div className="absolute bottom-2 left-2 p-2 rounded bg-slate-800/80 border border-slate-700 text-xs">
+            <div className="absolute bottom-3 left-3 p-2 rounded bg-[#000a14]/90 border border-[#00f0ff]/30 text-xs font-mono">
               <div className="flex gap-3">
                 {Object.entries(TYPE_COLORS).map(([type, color]) => (
-                  <div key={type} className="flex items-center gap-1">
+                  <div key={type} className="flex items-center gap-1.5">
                     <div className={`w-2 h-2 rounded-full ${color}`} />
-                    <span className="text-slate-400 capitalize">{type}</span>
+                    <span className="text-[#00f0ff]/60 capitalize">{type}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Current Location Indicator */}
-            <div className="absolute top-2 right-2 p-2 rounded bg-slate-800/80 border border-cyan-500/30 text-xs">
-              <div className="text-cyan-400">📍 Current: Sol Prime</div>
-              <div className="text-slate-400">Sector 7G</div>
+            <div className="absolute top-3 right-3 p-2 rounded bg-[#000a14]/90 border border-[#00f0ff]/30 text-xs font-mono">
+              <div className="text-[#00f0ff] flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#00ff9d] animate-pulse" />
+                CURRENT: Sol Prime
+              </div>
+              <div className="text-[#00f0ff]/50">Sector 7G</div>
             </div>
+            
+            {/* Targeting Reticle */}
+            {selectedSystem && (
+              <div 
+                className="absolute pointer-events-none"
+                style={{ 
+                  left: `${selectedSystem.x}%`, 
+                  top: `${selectedSystem.y}%`,
+                  transform: 'translate(-50%, -50%)'
+                }}
+              >
+                <div className="w-12 h-12 border-2 border-[#00f0ff]/50 rounded-full animate-ping" />
+              </div>
+            )}
           </div>
         </div>
 
         {/* System Info Panel */}
         <div className="lg:col-span-1">
-          <div ref={infoPanelRef} className="bg-slate-900/80 rounded-lg border border-slate-700 p-4 h-full">
+          <div ref={infoPanelRef} className="hud-panel hud-corners hud-corners-bottom rounded-lg p-4 h-full">
             {selectedSystem ? (
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <span className="text-3xl">{TYPE_ICONS[selectedSystem.type]}</span>
                   <div>
-                    <h3 className="text-lg font-bold text-white">{selectedSystem.name}</h3>
-                    <p className="text-sm text-slate-400 capitalize">{selectedSystem.type} System</p>
+                    <h3 className="text-lg font-display font-bold text-[#00f0ff]">{selectedSystem.name}</h3>
+                    <p className="text-sm text-[#00f0ff]/50 font-mono capitalize">{selectedSystem.type} System</p>
                   </div>
                 </div>
 
-                <div className="space-y-2 border-t border-slate-700 pt-3">
+                <div className="space-y-2 border-t border-[#00f0ff]/20 pt-3">
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">Planets</span>
-                    <span className="text-white">{selectedSystem.planets}</span>
+                    <span className="text-[#00f0ff]/50 font-mono">PLANETS</span>
+                    <span className="text-[#e0f7ff] font-display font-bold">{selectedSystem.planets}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">Stations</span>
-                    <span className="text-white">{selectedSystem.stations}</span>
+                    <span className="text-[#00f0ff]/50 font-mono">STATIONS</span>
+                    <span className="text-[#e0f7ff] font-display font-bold">{selectedSystem.stations}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">Status</span>
-                    <span className={selectedSystem.claimed ? 'text-orange-400' : 'text-green-400'}>
-                      {selectedSystem.claimed ? 'Claimed' : 'Unclaimed'}
+                    <span className="text-[#00f0ff]/50 font-mono">STATUS</span>
+                    <span className={selectedSystem.claimed ? 'text-[#ff9500] font-display font-bold' : 'text-[#00ff9d] font-display font-bold'}>
+                      {selectedSystem.claimed ? 'CLAIMED' : 'UNCLAIMED'}
                     </span>
                   </div>
                   {selectedSystem.playerOwned && (
-                    <div className="text-xs text-cyan-400 bg-cyan-500/10 px-2 py-1 rounded text-center">
-                      ★ You own this system
+                    <div className="text-xs text-[#00f0ff] bg-[#00f0ff]/10 px-2 py-1.5 rounded text-center font-mono border border-[#00f0ff]/30">
+                      ★ YOU OWN THIS SYSTEM
                     </div>
                   )}
                 </div>
 
                 <div className="space-y-2 pt-2">
-                  <button className="w-full px-4 py-2 rounded bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/30 transition-colors text-sm">
-                    🚀 Travel Here
+                  <button className="hud-btn w-full px-4 py-2.5 rounded text-sm">
+                    🚀 TRAVEL HERE
                   </button>
                   {!selectedSystem.claimed && (
-                    <button className="w-full px-4 py-2 rounded bg-green-500/20 border border-green-500/50 text-green-400 hover:bg-green-500/30 transition-colors text-sm">
-                      🏴 Claim System
+                    <button className="w-full px-4 py-2.5 rounded bg-[#00ff9d]/10 border border-[#00ff9d]/50 text-[#00ff9d] hover:bg-[#00ff9d]/20 transition-colors text-sm font-semibold">
+                      🏴 CLAIM SYSTEM
                     </button>
                   )}
-                  <button className="w-full px-4 py-2 rounded bg-slate-700/50 border border-slate-600 text-slate-300 hover:bg-slate-700 transition-colors text-sm">
-                    🔍 Scan System
+                  <button className="w-full px-4 py-2.5 rounded bg-[#001a30]/50 border border-[#00f0ff]/30 text-[#00f0ff]/70 hover:text-[#00f0ff] hover:border-[#00f0ff]/50 transition-colors text-sm font-semibold">
+                    🔍 SCAN SYSTEM
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="text-center text-slate-400 py-8">
+              <div className="text-center text-[#00f0ff]/40 py-8">
                 <div className="text-4xl mb-3">🌌</div>
-                <p>Select a star system to view details</p>
+                <p className="font-mono text-sm">Select a star system to view details</p>
               </div>
             )}
           </div>
@@ -315,21 +340,21 @@ export const StarMapView: React.FC = () => {
 
       {/* Quick Stats */}
       <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="stat-card p-3 rounded-lg bg-slate-800/50 border border-slate-700" style={{ opacity: 0 }}>
-          <div className="text-2xl font-bold text-cyan-400">7</div>
-          <div className="text-xs text-slate-400">Systems Discovered</div>
+        <div className="stat-card hud-panel p-3 rounded-lg" style={{ opacity: 0 }}>
+          <div className="text-2xl font-display font-bold text-[#00f0ff]">7</div>
+          <div className="text-xs text-[#00f0ff]/50 font-mono">SYSTEMS DISCOVERED</div>
         </div>
-        <div className="stat-card p-3 rounded-lg bg-slate-800/50 border border-slate-700" style={{ opacity: 0 }}>
-          <div className="text-2xl font-bold text-green-400">1</div>
-          <div className="text-xs text-slate-400">Systems Owned</div>
+        <div className="stat-card hud-panel p-3 rounded-lg" style={{ opacity: 0 }}>
+          <div className="text-2xl font-display font-bold text-[#00ff9d]">1</div>
+          <div className="text-xs text-[#00f0ff]/50 font-mono">SYSTEMS OWNED</div>
         </div>
-        <div className="stat-card p-3 rounded-lg bg-slate-800/50 border border-slate-700" style={{ opacity: 0 }}>
-          <div className="text-2xl font-bold text-orange-400">5</div>
-          <div className="text-xs text-slate-400">Planets Colonized</div>
+        <div className="stat-card hud-panel p-3 rounded-lg" style={{ opacity: 0 }}>
+          <div className="text-2xl font-display font-bold text-[#ff9500]">5</div>
+          <div className="text-xs text-[#00f0ff]/50 font-mono">PLANETS COLONIZED</div>
         </div>
-        <div className="stat-card p-3 rounded-lg bg-slate-800/50 border border-slate-700" style={{ opacity: 0 }}>
-          <div className="text-2xl font-bold text-purple-400">3</div>
-          <div className="text-xs text-slate-400">Active Stations</div>
+        <div className="stat-card hud-panel p-3 rounded-lg" style={{ opacity: 0 }}>
+          <div className="text-2xl font-display font-bold text-[#bf5af2]">3</div>
+          <div className="text-xs text-[#00f0ff]/50 font-mono">ACTIVE STATIONS</div>
         </div>
       </div>
     </div>
