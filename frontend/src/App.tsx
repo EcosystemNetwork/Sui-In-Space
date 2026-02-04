@@ -2,7 +2,8 @@ import React from 'react';
 import Layout from './components/Layout';
 import { AgentCard } from './components/AgentCard';
 import { ShipCard } from './components/ShipCard';
-import type { Agent, Ship, AgentType, AgentClass, ShipClass } from './types';
+import { AgentType, AgentClass, ShipClass } from './types';
+import type { Agent, Ship } from './types';
 
 /**
  * Main Application Component
