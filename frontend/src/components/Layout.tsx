@@ -240,22 +240,25 @@ export const Layout: React.FC<LayoutProps> = ({
             </div>
           </nav>
 
-          {/* Wallet Connection */}
-          <div className="p-4 border-t border-slate-700/50">
-            {currentAccount && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded bg-slate-800/50 border border-slate-700 mb-2">
-                <span className="text-green-400">●</span>
-                <span className="text-slate-300 text-xs font-mono truncate">
-                  {currentAccount.address.slice(0, 6)}...{currentAccount.address.slice(-4)}
-                </span>
-              </div>
-            )}
-            <ConnectButton className="!w-full !px-4 !py-2 !rounded-lg !bg-cyan-500/20 !border !border-cyan-500/50 !text-cyan-400 hover:!bg-cyan-500/30 !transition-colors" />
-          </div>
         </aside>
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0">
+          {/* Top Bar with Wallet */}
+          <div className="flex items-center justify-end p-4 border-b border-slate-800/50">
+            <div className="flex items-center gap-3">
+              {currentAccount && (
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-slate-800/50 border border-slate-700">
+                  <span className="text-green-400">●</span>
+                  <span className="text-slate-300 text-sm font-mono">
+                    {currentAccount.address.slice(0, 6)}...{currentAccount.address.slice(-4)}
+                  </span>
+                </div>
+              )}
+              <ConnectButton className="!px-4 !py-2 !rounded-lg !bg-cyan-500/20 !border !border-cyan-500/50 !text-cyan-400 hover:!bg-cyan-500/30 !transition-colors" />
+            </div>
+          </div>
+
           <main ref={mainRef} className="flex-1 p-6 overflow-auto">
             {children}
           </main>
