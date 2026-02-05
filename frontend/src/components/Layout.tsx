@@ -175,102 +175,111 @@ export const Layout: React.FC<LayoutProps> = ({
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 flex flex-col min-h-screen">
-        {/* Header */}
-        <header ref={headerRef} className="border-b border-cyan-500/30 bg-slate-900/80 backdrop-blur-md" style={{ opacity: 0 }}>
-          <div className="container mx-auto px-4 py-3">
-            <div className="flex items-center justify-between">
-              {/* Logo */}
-              <div className="flex items-center gap-3">
-                <div
-                  ref={logoRef}
-                  className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center"
-                >
-                  <span className="text-xl">🌌</span>
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                    SUI IN SPACE
-                  </h1>
-                  <p className="text-xs text-slate-400">Galactic DeFi Empire</p>
-                </div>
+      <div className="relative z-10 flex min-h-screen">
+        {/* Left Sidebar - Logo, Stats, Nav, Wallet */}
+        <aside ref={headerRef} className="w-64 flex-shrink-0 border-r border-cyan-500/30 bg-slate-900/80 backdrop-blur-md flex flex-col" style={{ opacity: 0 }}>
+          {/* Logo */}
+          <div className="p-4 border-b border-slate-700/50">
+            <div className="flex items-center gap-3">
+              <div
+                ref={logoRef}
+                className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center"
+              >
+                <span className="text-xl">🌌</span>
               </div>
-
-              {/* Player Stats Bar */}
-              <div className="hidden md:flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-slate-800/50 border border-slate-700">
-                  <span className="text-cyan-400">💎</span>
-                  <span className="text-white font-medium">{galacticBalance.toLocaleString()}</span>
-                  <span className="text-slate-400">GALACTIC</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-slate-800/50 border border-slate-700">
-                  <span className="text-yellow-400">⚡</span>
-                  <span className="text-white font-medium">{energyLevel}/100</span>
-                  <span className="text-slate-400">Energy</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-slate-800/50 border border-slate-700">
-                  <span className="text-purple-400">⭐</span>
-                  <span className="text-white font-medium">Lv.{playerLevel}</span>
-                </div>
-              </div>
-
-              {/* Slush Wallet Connection */}
-              <div className="flex items-center gap-3">
-                {currentAccount && (
-                  <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded bg-slate-800/50 border border-slate-700">
-                    <span className="text-green-400">●</span>
-                    <span className="text-slate-300 text-sm font-mono">
-                      {currentAccount.address.slice(0, 6)}...{currentAccount.address.slice(-4)}
-                    </span>
-                  </div>
-                )}
-                <ConnectButton className="!px-4 !py-2 !rounded-lg !bg-cyan-500/20 !border !border-cyan-500/50 !text-cyan-400 hover:!bg-cyan-500/30 !transition-colors" />
+              <div>
+                <h1 className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                  SUI IN SPACE
+                </h1>
+                <p className="text-xs text-slate-400">Galactic DeFi Empire</p>
               </div>
             </div>
           </div>
-        </header>
 
-        {/* Navigation */}
-        <nav ref={navRef} className="border-b border-slate-700/50 bg-slate-900/50 backdrop-blur-sm">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center gap-1 overflow-x-auto">
+          {/* Player Stats */}
+          <div className="p-4 border-b border-slate-700/50 space-y-2">
+            <div className="flex items-center gap-2 px-3 py-2 rounded bg-slate-800/50 border border-slate-700">
+              <span className="text-cyan-400">💎</span>
+              <div className="flex flex-col">
+                <span className="text-white font-medium text-sm">{galacticBalance.toLocaleString()}</span>
+                <span className="text-slate-400 text-xs">GALACTIC</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-2 rounded bg-slate-800/50 border border-slate-700">
+              <span className="text-yellow-400">⚡</span>
+              <div className="flex flex-col">
+                <span className="text-white font-medium text-sm">{energyLevel}/100</span>
+                <span className="text-slate-400 text-xs">Energy</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-2 rounded bg-slate-800/50 border border-slate-700">
+              <span className="text-purple-400">⭐</span>
+              <div className="flex flex-col">
+                <span className="text-white font-medium text-sm">Level {playerLevel}</span>
+                <span className="text-slate-400 text-xs">Rank: Commander</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <nav ref={navRef} className="flex-1 p-2 overflow-y-auto">
+            <div className="flex flex-col gap-1">
               {NAV_ITEMS.map((item) => (
-                <NavTab
+                <button
                   key={item.id}
-                  icon={item.icon}
-                  label={item.label}
-                  active={activeTab === item.id}
                   onClick={() => onTabChange(item.id)}
-                />
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${activeTab === item.id
+                      ? 'bg-cyan-500/20 border border-cyan-500/50 text-cyan-400'
+                      : 'hover:bg-slate-800/50 text-slate-300 hover:text-white border border-transparent'
+                    }`}
+                >
+                  <span className="text-lg">{item.icon}</span>
+                  <span className="text-sm font-medium">{item.label}</span>
+                </button>
               ))}
             </div>
+          </nav>
+
+          {/* Wallet Connection */}
+          <div className="p-4 border-t border-slate-700/50">
+            {currentAccount && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded bg-slate-800/50 border border-slate-700 mb-2">
+                <span className="text-green-400">●</span>
+                <span className="text-slate-300 text-xs font-mono truncate">
+                  {currentAccount.address.slice(0, 6)}...{currentAccount.address.slice(-4)}
+                </span>
+              </div>
+            )}
+            <ConnectButton className="!w-full !px-4 !py-2 !rounded-lg !bg-cyan-500/20 !border !border-cyan-500/50 !text-cyan-400 hover:!bg-cyan-500/30 !transition-colors" />
           </div>
-        </nav>
+        </aside>
 
         {/* Main Content Area */}
-        <main ref={mainRef} className="flex-1 container mx-auto px-4 py-6">
-          {children}
-        </main>
+        <div className="flex-1 flex flex-col min-w-0">
+          <main ref={mainRef} className="flex-1 p-6 overflow-auto">
+            {children}
+          </main>
 
-        {/* Footer */}
-        <footer className="border-t border-slate-800 bg-slate-900/80 backdrop-blur-md">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between text-sm text-slate-400 flex-wrap gap-2">
-              <div className="flex items-center gap-4">
-                <span>Current Epoch: 12,847</span>
-                <span className="text-cyan-400 hidden sm:inline">●</span>
-                <span>GALACTIC: $0.042</span>
-                <span className="text-cyan-400 hidden sm:inline">●</span>
-                <span>TVL: $12.4M</span>
-              </div>
-              <div className="flex items-center gap-4">
-                <a href="#" className="hover:text-cyan-400 transition-colors">Docs</a>
-                <a href="#" className="hover:text-cyan-400 transition-colors">Discord</a>
-                <a href="#" className="hover:text-cyan-400 transition-colors">Twitter</a>
+          {/* Footer */}
+          <footer className="border-t border-slate-800 bg-slate-900/80 backdrop-blur-md">
+            <div className="px-6 py-3">
+              <div className="flex items-center justify-between text-sm text-slate-400 flex-wrap gap-2">
+                <div className="flex items-center gap-4">
+                  <span>Epoch: 12,847</span>
+                  <span className="text-cyan-400">●</span>
+                  <span>GALACTIC: $0.042</span>
+                  <span className="text-cyan-400">●</span>
+                  <span>TVL: $12.4M</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <a href="#" className="hover:text-cyan-400 transition-colors">Docs</a>
+                  <a href="#" className="hover:text-cyan-400 transition-colors">Discord</a>
+                  <a href="#" className="hover:text-cyan-400 transition-colors">Twitter</a>
+                </div>
               </div>
             </div>
-          </div>
-        </footer>
+          </footer>
+        </div>
       </div>
 
       {/* Scanlines Effect */}
