@@ -4,14 +4,96 @@
  */
 
 import { supabase, isSupabaseConfigured } from './supabase';
-import type { Database, Player, Agent, Ship, Station, Mission, ActivityLog, UserSettings } from './database.types';
 
-type PlayerInsert = Database['public']['Tables']['players']['Insert'];
-type AgentInsert = Database['public']['Tables']['agents']['Insert'];
-type ShipInsert = Database['public']['Tables']['ships']['Insert'];
-type StationInsert = Database['public']['Tables']['stations']['Insert'];
-type MissionInsert = Database['public']['Tables']['missions']['Insert'];
-type ActivityLogInsert = Database['public']['Tables']['activity_log']['Insert'];
+// ============ Type Definitions ============
+
+export interface Player {
+    id: string;
+    wallet_address: string;
+    username: string | null;
+    galactic_balance: number;
+    sui_balance: number;
+    level: number;
+    experience: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface DbAgent {
+    id: string;
+    player_id: string;
+    name: string;
+    agent_type: number;
+    agent_class: number;
+    level: number;
+    experience: number;
+    stats: Record<string, number>;
+    is_staked: boolean;
+    missions_completed: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface DbShip {
+    id: string;
+    player_id: string;
+    name: string;
+    ship_class: number;
+    max_health: number;
+    current_health: number;
+    speed: number;
+    firepower: number;
+    fuel: number;
+    max_fuel: number;
+    is_docked: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface DbStation {
+    id: string;
+    player_id: string;
+    name: string;
+    station_type: number;
+    level: number;
+    total_staked: number;
+    yield_rate: number;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface Mission {
+    id: string;
+    player_id: string;
+    template_id: string;
+    agent_id: string;
+    ship_id: string | null;
+    status: number;
+    started_at: string;
+    completed_at: string | null;
+    reward: number | null;
+    success: boolean | null;
+}
+
+export interface ActivityLog {
+    id: string;
+    player_id: string;
+    event_type: string;
+    description: string;
+    metadata: Record<string, unknown> | null;
+    created_at: string;
+}
+
+export interface UserSettings {
+    id: string;
+    player_id: string;
+    theme: string;
+    sound_enabled: boolean;
+    notifications_enabled: boolean;
+    language: string;
+    updated_at: string;
+}
 
 // ============ Player Operations ============
 
@@ -42,7 +124,7 @@ export async function createPlayer(walletAddress: string, username?: string): Pr
             sui_balance: 0,
             level: 1,
             experience: 0,
-        } as PlayerInsert)
+        })
         .select()
         .single();
 
@@ -80,7 +162,7 @@ export async function getOrCreatePlayer(walletAddress: string): Promise<Player |
 
 // ============ Agent Operations ============
 
-export async function getAgentsByPlayer(playerId: string): Promise<Agent[]> {
+export async function getAgentsByPlayer(playerId: string): Promise<DbAgent[]> {
     if (!isSupabaseConfigured()) return [];
 
     const { data, error } = await supabase
@@ -96,7 +178,7 @@ export async function getAgentsByPlayer(playerId: string): Promise<Agent[]> {
     return data || [];
 }
 
-export async function createAgent(agent: AgentInsert): Promise<Agent | null> {
+export async function createAgent(agent: Omit<DbAgent, 'id' | 'created_at' | 'updated_at'>): Promise<DbAgent | null> {
     if (!isSupabaseConfigured()) return null;
 
     const { data, error } = await supabase
@@ -112,7 +194,7 @@ export async function createAgent(agent: AgentInsert): Promise<Agent | null> {
     return data;
 }
 
-export async function updateAgent(agentId: string, updates: Partial<Agent>): Promise<Agent | null> {
+export async function updateAgent(agentId: string, updates: Partial<DbAgent>): Promise<DbAgent | null> {
     if (!isSupabaseConfigured()) return null;
 
     const { data, error } = await supabase
@@ -131,7 +213,7 @@ export async function updateAgent(agentId: string, updates: Partial<Agent>): Pro
 
 // ============ Ship Operations ============
 
-export async function getShipsByPlayer(playerId: string): Promise<Ship[]> {
+export async function getShipsByPlayer(playerId: string): Promise<DbShip[]> {
     if (!isSupabaseConfigured()) return [];
 
     const { data, error } = await supabase
@@ -147,7 +229,7 @@ export async function getShipsByPlayer(playerId: string): Promise<Ship[]> {
     return data || [];
 }
 
-export async function createShip(ship: ShipInsert): Promise<Ship | null> {
+export async function createShip(ship: Omit<DbShip, 'id' | 'created_at' | 'updated_at'>): Promise<DbShip | null> {
     if (!isSupabaseConfigured()) return null;
 
     const { data, error } = await supabase
@@ -163,7 +245,7 @@ export async function createShip(ship: ShipInsert): Promise<Ship | null> {
     return data;
 }
 
-export async function updateShip(shipId: string, updates: Partial<Ship>): Promise<Ship | null> {
+export async function updateShip(shipId: string, updates: Partial<DbShip>): Promise<DbShip | null> {
     if (!isSupabaseConfigured()) return null;
 
     const { data, error } = await supabase
@@ -182,7 +264,7 @@ export async function updateShip(shipId: string, updates: Partial<Ship>): Promis
 
 // ============ Station Operations ============
 
-export async function getStationsByPlayer(playerId: string): Promise<Station[]> {
+export async function getStationsByPlayer(playerId: string): Promise<DbStation[]> {
     if (!isSupabaseConfigured()) return [];
 
     const { data, error } = await supabase
@@ -198,7 +280,7 @@ export async function getStationsByPlayer(playerId: string): Promise<Station[]> 
     return data || [];
 }
 
-export async function createStation(station: StationInsert): Promise<Station | null> {
+export async function createStation(station: Omit<DbStation, 'id' | 'created_at' | 'updated_at'>): Promise<DbStation | null> {
     if (!isSupabaseConfigured()) return null;
 
     const { data, error } = await supabase
@@ -232,7 +314,7 @@ export async function getMissionsByPlayer(playerId: string): Promise<Mission[]> 
     return data || [];
 }
 
-export async function createMission(mission: MissionInsert): Promise<Mission | null> {
+export async function createMission(mission: Omit<Mission, 'id'>): Promise<Mission | null> {
     if (!isSupabaseConfigured()) return null;
 
     const { data, error } = await supabase
@@ -258,7 +340,7 @@ export async function completeMission(
     const { data, error } = await supabase
         .from('missions')
         .update({
-            status: success ? 1 : 2, // 1 = Completed, 2 = Failed
+            status: success ? 1 : 2,
             completed_at: new Date().toISOString(),
             success,
             reward,
@@ -276,7 +358,7 @@ export async function completeMission(
 
 // ============ Activity Log Operations ============
 
-export async function logActivity(activity: ActivityLogInsert): Promise<ActivityLog | null> {
+export async function logActivity(activity: Omit<ActivityLog, 'id' | 'created_at'>): Promise<ActivityLog | null> {
     if (!isSupabaseConfigured()) return null;
 
     const { data, error } = await supabase
@@ -332,7 +414,6 @@ export async function updateUserSettings(
 ): Promise<UserSettings | null> {
     if (!isSupabaseConfigured()) return null;
 
-    // Try to update first
     const { data: existingSettings } = await supabase
         .from('user_settings')
         .select('*')
@@ -353,7 +434,6 @@ export async function updateUserSettings(
         }
         return data;
     } else {
-        // Create new settings
         const { data, error } = await supabase
             .from('user_settings')
             .insert({
@@ -379,9 +459,9 @@ export async function updateUserSettings(
 
 export interface FullPlayerData {
     player: Player;
-    agents: Agent[];
-    ships: Ship[];
-    stations: Station[];
+    agents: DbAgent[];
+    ships: DbShip[];
+    stations: DbStation[];
     missions: Mission[];
     settings: UserSettings | null;
 }
