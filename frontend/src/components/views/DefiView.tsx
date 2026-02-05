@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import anime from 'animejs';
 import { StationType } from '../../types';
+import { useMockActions } from '../../hooks/useMockActions';
 
 /**
  * DeFi View Component
@@ -122,15 +123,16 @@ const STATION_NAMES: Record<StationType, string> = {
 export const DefiView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'stations' | 'pools' | 'swap'>('stations');
   const [selectedStation, setSelectedStation] = useState<DemoStation | null>(null);
+  const { stake, unstake, claimYield, addLiquidity, removeLiquidity, swap } = useMockActions();
 
   const totalStakedByPlayer = DEMO_STATIONS.reduce((sum, s) => sum + s.playerStake, 0);
   const totalPendingRewards = DEMO_STATIONS.reduce((sum, s) => sum + s.pendingRewards, 0);
   const totalLPValue = DEMO_POOLS.reduce((sum, p) => sum + p.playerLP, 0);
-  
+
   const headerRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  
+
   // Initial entrance animations
   useEffect(() => {
     if (headerRef.current) {
@@ -142,7 +144,7 @@ export const DefiView: React.FC = () => {
         easing: 'easeOutCubic',
       });
     }
-    
+
     if (statsRef.current) {
       const statCards = statsRef.current.querySelectorAll('.stat-card');
       anime({
@@ -155,7 +157,7 @@ export const DefiView: React.FC = () => {
       });
     }
   }, []);
-  
+
   // Animate content when tab changes
   useEffect(() => {
     if (contentRef.current) {
@@ -166,7 +168,7 @@ export const DefiView: React.FC = () => {
         duration: 500,
         easing: 'easeOutCubic',
       });
-      
+
       const items = contentRef.current.querySelectorAll('.animated-item');
       anime({
         targets: items,
@@ -192,11 +194,10 @@ export const DefiView: React.FC = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab as 'stations' | 'pools' | 'swap')}
-              className={`px-3 py-1.5 rounded text-sm capitalize ${
-                activeTab === tab
-                  ? 'bg-green-500/20 text-green-400 border border-green-500/50'
-                  : 'bg-slate-700/50 text-slate-400 hover:text-white'
-              }`}
+              className={`px-3 py-1.5 rounded text-sm capitalize ${activeTab === tab
+                ? 'bg-green-500/20 text-green-400 border border-green-500/50'
+                : 'bg-slate-700/50 text-slate-400 hover:text-white'
+                }`}
             >
               {tab}
             </button>
@@ -227,7 +228,7 @@ export const DefiView: React.FC = () => {
       {/* Claim All Button */}
       {totalPendingRewards > 0 && (
         <div className="flex justify-end">
-          <button className="px-4 py-2 rounded bg-green-500/20 border border-green-500/50 text-green-400 hover:bg-green-500/30 transition-colors text-sm font-bold">
+          <button onClick={() => claimYield()} className="px-4 py-2 rounded bg-green-500/20 border border-green-500/50 text-green-400 hover:bg-green-500/30 transition-colors text-sm font-bold">
             🎁 Claim All Rewards ({totalPendingRewards.toLocaleString()} GALACTIC)
           </button>
         </div>
@@ -241,11 +242,10 @@ export const DefiView: React.FC = () => {
               <div
                 key={station.id}
                 onClick={() => setSelectedStation(selectedStation?.id === station.id ? null : station)}
-                className={`animated-item p-4 rounded-lg bg-slate-900/80 border cursor-pointer ${
-                  selectedStation?.id === station.id
-                    ? 'border-green-400 shadow-lg shadow-green-400/20'
-                    : 'border-slate-700 hover:border-slate-600'
-                }`}
+                className={`animated-item p-4 rounded-lg bg-slate-900/80 border cursor-pointer ${selectedStation?.id === station.id
+                  ? 'border-green-400 shadow-lg shadow-green-400/20'
+                  : 'border-slate-700 hover:border-slate-600'
+                  }`}
                 style={{ opacity: 0 }}
               >
                 {/* Header */}
@@ -296,14 +296,14 @@ export const DefiView: React.FC = () => {
                 {/* Expanded Actions */}
                 {selectedStation?.id === station.id && (
                   <div className="pt-3 border-t border-slate-700 flex gap-2">
-                    <button className="flex-1 px-3 py-2 rounded bg-green-500/20 border border-green-500/50 text-green-400 hover:bg-green-500/30 transition-colors text-xs">
+                    <button onClick={() => stake(1000)} className="flex-1 px-3 py-2 rounded bg-green-500/20 border border-green-500/50 text-green-400 hover:bg-green-500/30 transition-colors text-xs">
                       Stake
                     </button>
-                    <button className="flex-1 px-3 py-2 rounded bg-orange-500/20 border border-orange-500/50 text-orange-400 hover:bg-orange-500/30 transition-colors text-xs">
+                    <button onClick={() => unstake(1000)} className="flex-1 px-3 py-2 rounded bg-orange-500/20 border border-orange-500/50 text-orange-400 hover:bg-orange-500/30 transition-colors text-xs">
                       Unstake
                     </button>
                     {station.pendingRewards > 0 && (
-                      <button className="flex-1 px-3 py-2 rounded bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/30 transition-colors text-xs">
+                      <button onClick={() => claimYield()} className="flex-1 px-3 py-2 rounded bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/30 transition-colors text-xs">
                         Claim
                       </button>
                     )}
@@ -361,11 +361,11 @@ export const DefiView: React.FC = () => {
                     </div>
 
                     <div className="flex gap-2">
-                      <button className="px-3 py-2 rounded bg-green-500/20 border border-green-500/50 text-green-400 hover:bg-green-500/30 transition-colors text-xs">
+                      <button onClick={() => addLiquidity(1000)} className="px-3 py-2 rounded bg-green-500/20 border border-green-500/50 text-green-400 hover:bg-green-500/30 transition-colors text-xs">
                         Add Liquidity
                       </button>
                       {pool.playerLP > 0 && (
-                        <button className="px-3 py-2 rounded bg-orange-500/20 border border-orange-500/50 text-orange-400 hover:bg-orange-500/30 transition-colors text-xs">
+                        <button onClick={() => removeLiquidity(1000)} className="px-3 py-2 rounded bg-orange-500/20 border border-orange-500/50 text-orange-400 hover:bg-orange-500/30 transition-colors text-xs">
                           Remove
                         </button>
                       )}
@@ -450,7 +450,7 @@ export const DefiView: React.FC = () => {
               </div>
 
               {/* Swap Button */}
-              <button className="w-full mt-4 px-4 py-3 rounded-lg bg-gradient-to-r from-green-500/30 to-cyan-500/30 border border-green-400/50 text-white hover:from-green-500/50 hover:to-cyan-500/50 transition-all font-bold">
+              <button onClick={() => swap('GALACTIC', 'SUI', 1000)} className="w-full mt-4 px-4 py-3 rounded-lg bg-gradient-to-r from-green-500/30 to-cyan-500/30 border border-green-400/50 text-white hover:from-green-500/50 hover:to-cyan-500/50 transition-all font-bold">
                 ⚡ Swap
               </button>
             </div>

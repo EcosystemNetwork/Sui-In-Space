@@ -3,6 +3,7 @@ import anime from 'animejs';
 import { ShipCard } from '../ShipCard';
 import type { Ship } from '../../types';
 import { ShipClass } from '../../types';
+import { useMockActions } from '../../hooks/useMockActions';
 
 /**
  * Hangar View Component
@@ -87,12 +88,13 @@ const SHIP_CLASS_BLUEPRINTS = [
 export const HangarView: React.FC = () => {
   const [selectedShip, setSelectedShip] = useState<Ship | null>(null);
   const [viewMode, setViewMode] = useState<'fleet' | 'build'>('fleet');
-  
+  const { buildShip, repairShip, refuelShip, deployShip, recallShip } = useMockActions();
+
   const headerRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
-  
+
   // Initial entrance animations
   useEffect(() => {
     if (headerRef.current) {
@@ -104,7 +106,7 @@ export const HangarView: React.FC = () => {
         easing: 'easeOutCubic',
       });
     }
-    
+
     if (statsRef.current) {
       const statCards = statsRef.current.querySelectorAll('.stat-card');
       anime({
@@ -116,7 +118,7 @@ export const HangarView: React.FC = () => {
         easing: 'easeOutCubic',
       });
     }
-    
+
     if (gridRef.current) {
       const cards = gridRef.current.querySelectorAll('.ship-card-wrapper');
       anime({
@@ -129,7 +131,7 @@ export const HangarView: React.FC = () => {
       });
     }
   }, [viewMode]);
-  
+
   // Animate actions panel when ship is selected
   useEffect(() => {
     if (actionsRef.current && selectedShip) {
@@ -154,21 +156,19 @@ export const HangarView: React.FC = () => {
         <div className="flex gap-2">
           <button
             onClick={() => setViewMode('fleet')}
-            className={`px-3 py-1.5 rounded text-sm ${
-              viewMode === 'fleet'
+            className={`px-3 py-1.5 rounded text-sm ${viewMode === 'fleet'
                 ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50'
                 : 'bg-slate-700/50 text-slate-400 hover:text-white'
-            }`}
+              }`}
           >
             My Fleet
           </button>
           <button
             onClick={() => setViewMode('build')}
-            className={`px-3 py-1.5 rounded text-sm ${
-              viewMode === 'build'
+            className={`px-3 py-1.5 rounded text-sm ${viewMode === 'build'
                 ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50'
                 : 'bg-slate-700/50 text-slate-400 hover:text-white'
-            }`}
+              }`}
           >
             Shipyard
           </button>
@@ -215,19 +215,19 @@ export const HangarView: React.FC = () => {
             <div ref={actionsRef} className="p-4 rounded-lg bg-slate-900/80 border border-blue-500/30" style={{ opacity: 0 }}>
               <h3 className="text-lg font-bold text-white mb-3">Ship Actions: {selectedShip.name}</h3>
               <div className="flex flex-wrap gap-2">
-                <button className="px-4 py-2 rounded bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/30 transition-colors text-sm">
+                <button onClick={() => repairShip(selectedShip.id)} className="px-4 py-2 rounded bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/30 transition-colors text-sm">
                   🔧 Repair Hull
                 </button>
-                <button className="px-4 py-2 rounded bg-orange-500/20 border border-orange-500/50 text-orange-400 hover:bg-orange-500/30 transition-colors text-sm">
+                <button onClick={() => refuelShip(selectedShip.id)} className="px-4 py-2 rounded bg-orange-500/20 border border-orange-500/50 text-orange-400 hover:bg-orange-500/30 transition-colors text-sm">
                   ⛽ Refuel
                 </button>
-                <button className="px-4 py-2 rounded bg-purple-500/20 border border-purple-500/50 text-purple-400 hover:bg-purple-500/30 transition-colors text-sm">
+                <button onClick={() => repairShip(selectedShip.id)} className="px-4 py-2 rounded bg-purple-500/20 border border-purple-500/50 text-purple-400 hover:bg-purple-500/30 transition-colors text-sm">
                   📦 Manage Modules
                 </button>
-                <button className="px-4 py-2 rounded bg-green-500/20 border border-green-500/50 text-green-400 hover:bg-green-500/30 transition-colors text-sm">
+                <button onClick={() => deployShip(selectedShip.id)} className="px-4 py-2 rounded bg-green-500/20 border border-green-500/50 text-green-400 hover:bg-green-500/30 transition-colors text-sm">
                   👥 Assign Crew
                 </button>
-                <button className="px-4 py-2 rounded bg-blue-500/20 border border-blue-500/50 text-blue-400 hover:bg-blue-500/30 transition-colors text-sm">
+                <button onClick={() => selectedShip.isDocked ? deployShip(selectedShip.id) : recallShip(selectedShip.id)} className="px-4 py-2 rounded bg-blue-500/20 border border-blue-500/50 text-blue-400 hover:bg-blue-500/30 transition-colors text-sm">
                   {selectedShip.isDocked ? '🚀 Launch' : '🏠 Dock'}
                 </button>
               </div>
@@ -263,7 +263,7 @@ export const HangarView: React.FC = () => {
                       <span className="text-slate-400">Cost: </span>
                       <span className="text-cyan-400 font-bold">{blueprint.cost.toLocaleString()}</span>
                     </div>
-                    <button className="px-3 py-1 rounded bg-blue-500/20 border border-blue-500/50 text-blue-400 hover:bg-blue-500/30 transition-colors text-xs">
+                    <button onClick={() => buildShip(blueprint.name)} className="px-3 py-1 rounded bg-blue-500/20 border border-blue-500/50 text-blue-400 hover:bg-blue-500/30 transition-colors text-xs">
                       Build
                     </button>
                   </div>

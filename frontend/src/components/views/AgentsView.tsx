@@ -3,6 +3,7 @@ import anime from 'animejs';
 import { AgentCard } from '../AgentCard';
 import type { Agent } from '../../types';
 import { AgentType, AgentClass } from '../../types';
+import { useMockActions } from '../../hooks/useMockActions';
 
 /**
  * Agents View Component
@@ -103,17 +104,18 @@ export const AgentsView: React.FC = () => {
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [viewMode, setViewMode] = useState<'roster' | 'recruit'>('roster');
   const [filterClass, setFilterClass] = useState<AgentClass | null>(null);
+  const { mintAgent, trainAgent, stakeAgent, unstakeAgent, startMission } = useMockActions();
 
-  const filteredAgents = filterClass !== null 
+  const filteredAgents = filterClass !== null
     ? DEMO_AGENTS.filter(a => a.class === filterClass)
     : DEMO_AGENTS;
-    
+
   const headerRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
-  
+
   // Initial entrance animations
   useEffect(() => {
     if (headerRef.current) {
@@ -125,7 +127,7 @@ export const AgentsView: React.FC = () => {
         easing: 'easeOutCubic',
       });
     }
-    
+
     if (statsRef.current) {
       const statCards = statsRef.current.querySelectorAll('.stat-card');
       anime({
@@ -137,7 +139,7 @@ export const AgentsView: React.FC = () => {
         easing: 'easeOutCubic',
       });
     }
-    
+
     if (filterRef.current) {
       const buttons = filterRef.current.querySelectorAll('button');
       anime({
@@ -150,7 +152,7 @@ export const AgentsView: React.FC = () => {
       });
     }
   }, [viewMode]);
-  
+
   // Animate grid when filter changes
   useEffect(() => {
     if (gridRef.current) {
@@ -165,7 +167,7 @@ export const AgentsView: React.FC = () => {
       });
     }
   }, [filterClass, viewMode]);
-  
+
   // Animate actions panel
   useEffect(() => {
     if (actionsRef.current && selectedAgent) {
@@ -190,21 +192,19 @@ export const AgentsView: React.FC = () => {
         <div className="flex gap-2">
           <button
             onClick={() => setViewMode('roster')}
-            className={`px-3 py-1.5 rounded text-sm ${
-              viewMode === 'roster'
+            className={`px-3 py-1.5 rounded text-sm ${viewMode === 'roster'
                 ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50'
                 : 'bg-slate-700/50 text-slate-400 hover:text-white'
-            }`}
+              }`}
           >
             My Agents
           </button>
           <button
             onClick={() => setViewMode('recruit')}
-            className={`px-3 py-1.5 rounded text-sm ${
-              viewMode === 'recruit'
+            className={`px-3 py-1.5 rounded text-sm ${viewMode === 'recruit'
                 ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50'
                 : 'bg-slate-700/50 text-slate-400 hover:text-white'
-            }`}
+              }`}
           >
             Recruit
           </button>
@@ -239,11 +239,10 @@ export const AgentsView: React.FC = () => {
           <div ref={filterRef} className="flex flex-wrap gap-2">
             <button
               onClick={() => setFilterClass(null)}
-              className={`px-3 py-1.5 rounded text-xs ${
-                filterClass === null
+              className={`px-3 py-1.5 rounded text-xs ${filterClass === null
                   ? 'bg-slate-600 text-white'
                   : 'bg-slate-700/50 text-slate-400 hover:text-white'
-              }`}
+                }`}
             >
               All Classes
             </button>
@@ -251,11 +250,10 @@ export const AgentsView: React.FC = () => {
               <button
                 key={cls.class}
                 onClick={() => setFilterClass(cls.class)}
-                className={`px-3 py-1.5 rounded text-xs ${
-                  filterClass === cls.class
+                className={`px-3 py-1.5 rounded text-xs ${filterClass === cls.class
                     ? 'bg-purple-500/30 text-purple-400 border border-purple-500/50'
                     : 'bg-slate-700/50 text-slate-400 hover:text-white'
-                }`}
+                  }`}
               >
                 {cls.icon} {cls.name}
               </button>
@@ -280,19 +278,19 @@ export const AgentsView: React.FC = () => {
             <div ref={actionsRef} className="p-4 rounded-lg bg-slate-900/80 border border-purple-500/30" style={{ opacity: 0 }}>
               <h3 className="text-lg font-bold text-white mb-3">Agent Actions: {selectedAgent.name}</h3>
               <div className="flex flex-wrap gap-2">
-                <button className="px-4 py-2 rounded bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/30 transition-colors text-sm">
+                <button onClick={() => trainAgent(selectedAgent.id)} className="px-4 py-2 rounded bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/30 transition-colors text-sm">
                   ⬆️ Level Up
                 </button>
-                <button className="px-4 py-2 rounded bg-purple-500/20 border border-purple-500/50 text-purple-400 hover:bg-purple-500/30 transition-colors text-sm">
+                <button onClick={() => trainAgent(selectedAgent.id)} className="px-4 py-2 rounded bg-purple-500/20 border border-purple-500/50 text-purple-400 hover:bg-purple-500/30 transition-colors text-sm">
                   🔧 Augment
                 </button>
-                <button className="px-4 py-2 rounded bg-blue-500/20 border border-blue-500/50 text-blue-400 hover:bg-blue-500/30 transition-colors text-sm">
+                <button onClick={() => startMission(selectedAgent.id)} className="px-4 py-2 rounded bg-blue-500/20 border border-blue-500/50 text-blue-400 hover:bg-blue-500/30 transition-colors text-sm">
                   🚀 Assign to Ship
                 </button>
-                <button className="px-4 py-2 rounded bg-green-500/20 border border-green-500/50 text-green-400 hover:bg-green-500/30 transition-colors text-sm">
+                <button onClick={() => selectedAgent.isStaked ? unstakeAgent(selectedAgent.id) : stakeAgent(selectedAgent.id)} className="px-4 py-2 rounded bg-green-500/20 border border-green-500/50 text-green-400 hover:bg-green-500/30 transition-colors text-sm">
                   {selectedAgent.isStaked ? '📤 Unstake' : '📥 Stake'}
                 </button>
-                <button className="px-4 py-2 rounded bg-orange-500/20 border border-orange-500/50 text-orange-400 hover:bg-orange-500/30 transition-colors text-sm">
+                <button onClick={() => startMission(selectedAgent.id)} className="px-4 py-2 rounded bg-orange-500/20 border border-orange-500/50 text-orange-400 hover:bg-orange-500/30 transition-colors text-sm">
                   📜 Send on Mission
                 </button>
               </div>
@@ -331,7 +329,7 @@ export const AgentsView: React.FC = () => {
                       <span className="text-slate-400">Cost: </span>
                       <span className="text-cyan-400 font-bold">10,000</span>
                     </div>
-                    <button className="px-3 py-1 rounded bg-purple-500/20 border border-purple-500/50 text-purple-400 hover:bg-purple-500/30 transition-colors text-xs">
+                    <button onClick={() => mintAgent(cls.name)} className="px-3 py-1 rounded bg-purple-500/20 border border-purple-500/50 text-purple-400 hover:bg-purple-500/30 transition-colors text-xs">
                       Recruit
                     </button>
                   </div>
@@ -349,7 +347,7 @@ export const AgentsView: React.FC = () => {
               </div>
               <div className="text-right">
                 <div className="text-sm text-slate-400 mb-1">Cost: <span className="text-cyan-400 font-bold">25,000</span></div>
-                <button className="px-4 py-2 rounded bg-gradient-to-r from-purple-500/30 to-cyan-500/30 border border-purple-400/50 text-white hover:from-purple-500/50 hover:to-cyan-500/50 transition-all text-sm font-bold">
+                <button onClick={() => mintAgent()} className="px-4 py-2 rounded bg-gradient-to-r from-purple-500/30 to-cyan-500/30 border border-purple-400/50 text-white hover:from-purple-500/50 hover:to-cyan-500/50 transition-all text-sm font-bold">
                   🎰 Roll for Agent
                 </button>
               </div>
