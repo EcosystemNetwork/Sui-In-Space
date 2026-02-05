@@ -1,6 +1,7 @@
 import { useState, lazy, Suspense } from 'react';
 import Layout, { TabType } from './components/Layout';
 import { ActivityLog } from './components/ActivityLog';
+import { usePlayerData } from './hooks/usePlayerData';
 
 // Lazy load view components for better initial load performance
 const SpaceBaseMapView = lazy(() => import('./components/views/SpaceBaseMapView').then(m => ({ default: m.SpaceBaseMapView })));
@@ -24,6 +25,9 @@ const LoadingSpinner = () => (
  */
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('base');
+
+  // Load player data from Supabase when wallet connects
+  usePlayerData();
 
   const renderView = () => {
     switch (activeTab) {

@@ -52,7 +52,7 @@ export function usePlayerData() {
                     name: a.name,
                     agentType: a.agent_type,
                     class: a.agent_class,
-                    stats: a.stats as Agent['stats'],
+                    stats: a.stats as unknown as Agent['stats'],
                     level: a.level,
                     experience: a.experience,
                     firmwareVersion: 1,
