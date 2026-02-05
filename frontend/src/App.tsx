@@ -1,7 +1,22 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import Layout, { TabType } from './components/Layout';
-import { StarMapView, HangarView, AgentsView, MissionsView, DefiView, GovernanceView, SpaceBaseMapView } from './components/views';
 import { ActivityLog } from './components/ActivityLog';
+
+// Lazy load view components for better initial load performance
+const SpaceBaseMapView = lazy(() => import('./components/views/SpaceBaseMapView').then(m => ({ default: m.SpaceBaseMapView })));
+const StarMapView = lazy(() => import('./components/views/StarMapView').then(m => ({ default: m.StarMapView })));
+const HangarView = lazy(() => import('./components/views/HangarView').then(m => ({ default: m.HangarView })));
+const AgentsView = lazy(() => import('./components/views/AgentsView').then(m => ({ default: m.AgentsView })));
+const MissionsView = lazy(() => import('./components/views/MissionsView').then(m => ({ default: m.MissionsView })));
+const DefiView = lazy(() => import('./components/views/DefiView').then(m => ({ default: m.DefiView })));
+const GovernanceView = lazy(() => import('./components/views/GovernanceView').then(m => ({ default: m.GovernanceView })));
+
+// Loading spinner for lazy components
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center h-64">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400"></div>
+  </div>
+);
 
 /**
  * Main Application Component
@@ -32,8 +47,8 @@ function App() {
   };
 
   return (
-    <Layout 
-      activeTab={activeTab} 
+    <Layout
+      activeTab={activeTab}
       onTabChange={setActiveTab}
       galacticBalance={125000}
       energyLevel={85}
@@ -42,7 +57,9 @@ function App() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Main Content Area */}
         <div className="lg:col-span-3">
-          {renderView()}
+          <Suspense fallback={<LoadingSpinner />}>
+            {renderView()}
+          </Suspense>
         </div>
 
         {/* Sidebar */}
@@ -84,28 +101,28 @@ function App() {
               Quick Actions
             </h3>
             <div className="grid grid-cols-2 gap-2">
-              <button 
+              <button
                 onClick={() => setActiveTab('agents')}
                 className="p-3 rounded bg-slate-800/50 border border-slate-700 hover:border-purple-500/50 hover:bg-slate-800 transition-all flex flex-col items-center gap-1"
               >
                 <span className="text-xl">🤖</span>
                 <span className="text-xs text-slate-300">Mint Agent</span>
               </button>
-              <button 
+              <button
                 onClick={() => setActiveTab('hangar')}
                 className="p-3 rounded bg-slate-800/50 border border-slate-700 hover:border-blue-500/50 hover:bg-slate-800 transition-all flex flex-col items-center gap-1"
               >
                 <span className="text-xl">🚀</span>
                 <span className="text-xs text-slate-300">Build Ship</span>
               </button>
-              <button 
+              <button
                 onClick={() => setActiveTab('missions')}
                 className="p-3 rounded bg-slate-800/50 border border-slate-700 hover:border-yellow-500/50 hover:bg-slate-800 transition-all flex flex-col items-center gap-1"
               >
                 <span className="text-xl">📜</span>
                 <span className="text-xs text-slate-300">Missions</span>
               </button>
-              <button 
+              <button
                 onClick={() => setActiveTab('defi')}
                 className="p-3 rounded bg-slate-800/50 border border-slate-700 hover:border-green-500/50 hover:bg-slate-800 transition-all flex flex-col items-center gap-1"
               >

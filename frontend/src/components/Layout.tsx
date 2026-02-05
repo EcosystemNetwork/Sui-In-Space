@@ -1,5 +1,6 @@
 import React, { useMemo, useEffect, useRef } from 'react';
 import anime from 'animejs';
+import { ConnectButton, useCurrentAccount } from '@mysten/dapp-kit';
 
 /**
  * Main Application Layout Component
@@ -56,9 +57,9 @@ const generateStars = (count: number) => {
   return stars;
 };
 
-export const Layout: React.FC<LayoutProps> = ({ 
-  children, 
-  activeTab, 
+export const Layout: React.FC<LayoutProps> = ({
+  children,
+  activeTab,
   onTabChange,
   galacticBalance = 125000,
   energyLevel = 85,
@@ -66,14 +67,17 @@ export const Layout: React.FC<LayoutProps> = ({
 }) => {
   // Memoize stars to prevent regeneration on re-renders
   const stars = useMemo(() => generateStars(150), []);
-  
+
+  // Get connected wallet account
+  const currentAccount = useCurrentAccount();
+
   // Refs for animations
   const headerRef = useRef<HTMLElement>(null);
   const navRef = useRef<HTMLElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   const starsContainerRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLDivElement>(null);
-  
+
   // Initial page load animations
   useEffect(() => {
     // Animate header entrance
@@ -86,7 +90,7 @@ export const Layout: React.FC<LayoutProps> = ({
         easing: 'easeOutCubic',
       });
     }
-    
+
     // Animate navigation entrance
     if (navRef.current) {
       anime({
@@ -98,7 +102,7 @@ export const Layout: React.FC<LayoutProps> = ({
         easing: 'easeOutCubic',
       });
     }
-    
+
     // Animate logo with glow effect
     if (logoRef.current) {
       anime({
@@ -114,7 +118,7 @@ export const Layout: React.FC<LayoutProps> = ({
         direction: 'alternate',
       });
     }
-    
+
     // Animate stars with twinkling effect
     if (starsContainerRef.current) {
       const starElements = starsContainerRef.current.querySelectorAll('.star');
@@ -133,7 +137,7 @@ export const Layout: React.FC<LayoutProps> = ({
       });
     }
   }, [stars]);
-  
+
   // Animate main content when tab changes
   useEffect(() => {
     if (mainRef.current) {
@@ -152,7 +156,7 @@ export const Layout: React.FC<LayoutProps> = ({
       {/* Background Effects */}
       <div className="fixed inset-0 bg-gradient-to-b from-slate-900 via-slate-950 to-black" />
       <div className="fixed inset-0 bg-[url('/grid.svg')] opacity-10" />
-      
+
       {/* Animated Stars Background */}
       <div ref={starsContainerRef} className="fixed inset-0 overflow-hidden pointer-events-none">
         {stars.map((star, i) => (
@@ -178,7 +182,7 @@ export const Layout: React.FC<LayoutProps> = ({
             <div className="flex items-center justify-between">
               {/* Logo */}
               <div className="flex items-center gap-3">
-                <div 
+                <div
                   ref={logoRef}
                   className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center"
                 >
@@ -210,10 +214,18 @@ export const Layout: React.FC<LayoutProps> = ({
                 </div>
               </div>
 
-              {/* Wallet Connection Placeholder */}
-              <button className="px-4 py-2 rounded-lg bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/30 transition-colors">
-                Connect Wallet
-              </button>
+              {/* Slush Wallet Connection */}
+              <div className="flex items-center gap-3">
+                {currentAccount && (
+                  <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded bg-slate-800/50 border border-slate-700">
+                    <span className="text-green-400">●</span>
+                    <span className="text-slate-300 text-sm font-mono">
+                      {currentAccount.address.slice(0, 6)}...{currentAccount.address.slice(-4)}
+                    </span>
+                  </div>
+                )}
+                <ConnectButton className="!px-4 !py-2 !rounded-lg !bg-cyan-500/20 !border !border-cyan-500/50 !text-cyan-400 hover:!bg-cyan-500/30 !transition-colors" />
+              </div>
             </div>
           </div>
         </header>
@@ -280,7 +292,7 @@ interface NavTabProps {
 
 const NavTab: React.FC<NavTabProps> = ({ icon, label, active, onClick }) => {
   const buttonRef = useRef<HTMLButtonElement>(null);
-  
+
   const handleClick = () => {
     if (buttonRef.current && onClick) {
       // Quick pulse animation on click
@@ -293,7 +305,7 @@ const NavTab: React.FC<NavTabProps> = ({ icon, label, active, onClick }) => {
       onClick();
     }
   };
-  
+
   const handleMouseEnter = () => {
     if (buttonRef.current && !active) {
       anime({
@@ -304,7 +316,7 @@ const NavTab: React.FC<NavTabProps> = ({ icon, label, active, onClick }) => {
       });
     }
   };
-  
+
   const handleMouseLeave = () => {
     if (buttonRef.current && !active) {
       anime({
@@ -315,7 +327,7 @@ const NavTab: React.FC<NavTabProps> = ({ icon, label, active, onClick }) => {
       });
     }
   };
-  
+
   return (
     <button
       ref={buttonRef}
@@ -324,8 +336,8 @@ const NavTab: React.FC<NavTabProps> = ({ icon, label, active, onClick }) => {
       onMouseLeave={handleMouseLeave}
       className={`
         px-4 py-3 flex items-center gap-2 text-sm font-medium whitespace-nowrap
-        ${active 
-          ? 'text-cyan-400 border-b-2 border-cyan-400 bg-cyan-500/10' 
+        ${active
+          ? 'text-cyan-400 border-b-2 border-cyan-400 bg-cyan-500/10'
           : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
         }
       `}
