@@ -90,12 +90,11 @@ export const SpaceBaseMapView: React.FC = () => {
         className="relative w-full h-full rounded overflow-hidden"
         style={{ opacity: 0 }}
       >
-        {/* Star Kingdoms Background Image - Full image visible */}
+        {/* Star Kingdoms Background Image - Fill entire space */}
         <div
-          className="absolute inset-0 bg-contain bg-center bg-no-repeat"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
             backgroundImage: 'url(/star-kingdoms-map.jpg)',
-            backgroundColor: '#1a1a2e',
           }}
         />
 
