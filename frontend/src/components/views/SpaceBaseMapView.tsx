@@ -90,11 +90,12 @@ export const SpaceBaseMapView: React.FC = () => {
         className="relative w-full h-full rounded overflow-hidden"
         style={{ opacity: 0 }}
       >
-        {/* Star Kingdoms Background Image */}
+        {/* Star Kingdoms Background Image - Full image visible */}
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className="absolute inset-0 bg-contain bg-center bg-no-repeat"
           style={{
             backgroundImage: 'url(/star-kingdoms-map.jpg)',
+            backgroundColor: '#1a1a2e',
           }}
         />
 
@@ -106,8 +107,8 @@ export const SpaceBaseMapView: React.FC = () => {
             onMouseEnter={() => setHoveredLocation(location)}
             onMouseLeave={() => setHoveredLocation(null)}
             className={`absolute transition-all duration-200 rounded-lg ${hoveredLocation?.id === location.id || selectedLocation?.id === location.id
-                ? 'bg-cyan-400/20 border-2 border-cyan-400/60'
-                : 'bg-transparent border-2 border-transparent hover:border-cyan-400/30'
+              ? 'bg-cyan-400/20 border-2 border-cyan-400/60'
+              : 'bg-transparent border-2 border-transparent hover:border-cyan-400/30'
               }`}
             style={{
               left: `${location.x}%`,
