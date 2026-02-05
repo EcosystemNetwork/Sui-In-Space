@@ -229,8 +229,8 @@ export const Layout: React.FC<LayoutProps> = ({
                   key={item.id}
                   onClick={() => onTabChange(item.id)}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${activeTab === item.id
-                      ? 'bg-cyan-500/20 border border-cyan-500/50 text-cyan-400'
-                      : 'hover:bg-slate-800/50 text-slate-300 hover:text-white border border-transparent'
+                    ? 'bg-cyan-500/20 border border-cyan-500/50 text-cyan-400'
+                    : 'hover:bg-slate-800/50 text-slate-300 hover:text-white border border-transparent'
                     }`}
                 >
                   <span className="text-lg">{item.icon}</span>
@@ -292,70 +292,5 @@ export const Layout: React.FC<LayoutProps> = ({
   );
 };
 
-interface NavTabProps {
-  icon: string;
-  label: string;
-  active?: boolean;
-  onClick?: () => void;
-}
-
-const NavTab: React.FC<NavTabProps> = ({ icon, label, active, onClick }) => {
-  const buttonRef = useRef<HTMLButtonElement>(null);
-
-  const handleClick = () => {
-    if (buttonRef.current && onClick) {
-      // Quick pulse animation on click
-      anime({
-        targets: buttonRef.current,
-        scale: [1, 0.95, 1],
-        duration: 200,
-        easing: 'easeInOutQuad',
-      });
-      onClick();
-    }
-  };
-
-  const handleMouseEnter = () => {
-    if (buttonRef.current && !active) {
-      anime({
-        targets: buttonRef.current,
-        translateY: -2,
-        duration: 200,
-        easing: 'easeOutCubic',
-      });
-    }
-  };
-
-  const handleMouseLeave = () => {
-    if (buttonRef.current && !active) {
-      anime({
-        targets: buttonRef.current,
-        translateY: 0,
-        duration: 200,
-        easing: 'easeOutCubic',
-      });
-    }
-  };
-
-  return (
-    <button
-      ref={buttonRef}
-      onClick={handleClick}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      className={`
-        px-4 py-3 flex items-center gap-2 text-sm font-medium whitespace-nowrap
-        ${active
-          ? 'text-cyan-400 border-b-2 border-cyan-400 bg-cyan-500/10'
-          : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-        }
-      `}
-      style={{ opacity: 0 }}
-    >
-      <span>{icon}</span>
-      <span>{label}</span>
-    </button>
-  );
-};
 
 export default Layout;
