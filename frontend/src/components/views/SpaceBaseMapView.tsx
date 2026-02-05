@@ -90,13 +90,16 @@ export const SpaceBaseMapView: React.FC = () => {
         className="relative w-full h-full rounded overflow-hidden"
         style={{ opacity: 0 }}
       >
-        {/* Star Kingdoms Background Image - Fill entire space */}
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: 'url(/star-kingdoms-map.jpg)',
-          }}
-        />
+        {/* Video Background - Fill entire space and loop */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src="/backg.mp4" type="video/mp4" />
+        </video>
 
         {/* Clickable Location Overlays (invisible, for interaction) */}
         {LOCATIONS.map(location => (
