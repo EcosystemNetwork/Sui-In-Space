@@ -498,5 +498,5 @@ export interface UIState {
   selectedShip: ObjectId | null;
   selectedPlanet: ObjectId | null;
   selectedStation: ObjectId | null;
-  activeTab: 'base' | 'map' | 'hangar' | 'agents' | 'missions' | 'defi' | 'governance';
+  activeTab: 'base' | 'map' | 'hangar' | 'agents' | 'missions' | 'defi' | 'governance' | 'minter';
 }

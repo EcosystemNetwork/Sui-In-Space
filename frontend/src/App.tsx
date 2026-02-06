@@ -11,6 +11,7 @@ const AgentsView = lazy(() => import('./components/views/AgentsView').then(m => 
 const MissionsView = lazy(() => import('./components/views/MissionsView').then(m => ({ default: m.MissionsView })));
 const DefiView = lazy(() => import('./components/views/DefiView').then(m => ({ default: m.DefiView })));
 const GovernanceView = lazy(() => import('./components/views/GovernanceView').then(m => ({ default: m.GovernanceView })));
+const CharacterMinterView = lazy(() => import('./components/views/CharacterMinterView').then(m => ({ default: m.CharacterMinterView })));
 
 // Loading spinner for lazy components
 const LoadingSpinner = () => (
@@ -45,6 +46,8 @@ function App() {
         return <DefiView />;
       case 'governance':
         return <GovernanceView />;
+      case 'minter':
+        return <CharacterMinterView />;
       default:
         return <SpaceBaseMapView />;
     }
@@ -132,6 +135,13 @@ function App() {
               >
                 <span className="text-xl">💰</span>
                 <span className="text-xs text-slate-300">Claim All</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('minter')}
+                className="p-3 rounded bg-slate-800/50 border border-slate-700 hover:border-red-500/50 hover:bg-slate-800 transition-all flex flex-col items-center gap-1 col-span-2"
+              >
+                <span className="text-xl">🧬</span>
+                <span className="text-xs text-slate-300">Mint Character</span>
               </button>
             </div>
           </div>
