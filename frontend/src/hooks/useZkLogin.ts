@@ -21,7 +21,10 @@ import { jwtDecode } from 'jwt-decode';
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 const SHINAMI_API_KEY = import.meta.env.VITE_SHINAMI_API_KEY || '';
 
-const SHINAMI_PROVER_URL = 'https://api.shinami.com/sui/zkprover/v1';
+// In dev, proxy through Vite to avoid CORS. In prod, call Shinami directly.
+const SHINAMI_PROVER_URL = import.meta.env.DEV
+  ? '/api/shinami'
+  : 'https://api.shinami.com/sui/zkprover/v1';
 
 const SESSION_STORAGE_KEY = 'zklogin:account';
 const SETUP_STORAGE_KEY = 'zklogin:setup';
