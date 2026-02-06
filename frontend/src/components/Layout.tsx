@@ -178,42 +178,42 @@ export const Layout: React.FC<LayoutProps> = ({
       {/* Main Content */}
       <div className="relative z-10 flex min-h-screen">
         {/* Left Sidebar - Logo, Stats, Nav, Wallet */}
-        <aside ref={headerRef} className="w-64 flex-shrink-0 border-r border-cyan-500/30 bg-slate-900/80 backdrop-blur-md flex flex-col" style={{ opacity: 0 }}>
+        <aside ref={headerRef} className="w-64 flex-shrink-0 border-r border-cyan-500/30 bg-gradient-to-b from-slate-900/95 via-slate-900/90 to-slate-950/95 backdrop-blur-xl flex flex-col neon-glow-cyan" style={{ opacity: 0 }}>
           {/* Logo */}
-          <div className="p-4 border-b border-slate-700/50">
+          <div className="p-4 border-b border-cyan-500/20">
             <div className="flex items-center gap-3">
               <div
                 ref={logoRef}
-                className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center"
+                className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-600 flex items-center justify-center animate-breathe"
               >
                 <span className="text-xl">🌌</span>
               </div>
               <div>
-                <h1 className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                <h1 className="text-lg font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent glitch-text">
                   SUI IN SPACE
                 </h1>
-                <p className="text-xs text-slate-400">Galactic DeFi Empire</p>
+                <p className="text-xs text-cyan-400/60">Galactic DeFi Empire</p>
               </div>
             </div>
           </div>
 
           {/* Player Stats */}
-          <div className="p-4 border-b border-slate-700/50 space-y-2">
-            <div className="flex items-center gap-2 px-3 py-2 rounded bg-slate-800/50 border border-slate-700">
+          <div className="p-4 border-b border-cyan-500/20 space-y-2">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800/60 border border-cyan-500/20 holographic-shimmer">
               <span className="text-cyan-400">💎</span>
               <div className="flex flex-col">
-                <span className="text-white font-medium text-sm">{galacticBalance.toLocaleString()}</span>
+                <span className="text-white font-medium text-sm counter-value text-glow-subtle" style={{ color: '#22d3ee' }}>{galacticBalance.toLocaleString()}</span>
                 <span className="text-slate-400 text-xs">GALACTIC</span>
               </div>
             </div>
-            <div className="flex items-center gap-2 px-3 py-2 rounded bg-slate-800/50 border border-slate-700">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800/60 border border-yellow-500/20 holographic-shimmer">
               <span className="text-yellow-400">⚡</span>
               <div className="flex flex-col">
-                <span className="text-white font-medium text-sm">{energyLevel}/100</span>
+                <span className="text-white font-medium text-sm counter-value">{energyLevel}/100</span>
                 <span className="text-slate-400 text-xs">Energy</span>
               </div>
             </div>
-            <div className="flex items-center gap-2 px-3 py-2 rounded bg-slate-800/50 border border-slate-700">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800/60 border border-purple-500/20 holographic-shimmer">
               <span className="text-purple-400">⭐</span>
               <div className="flex flex-col">
                 <span className="text-white font-medium text-sm">Level {playerLevel}</span>
@@ -229,13 +229,13 @@ export const Layout: React.FC<LayoutProps> = ({
                 <button
                   key={item.id}
                   onClick={() => onTabChange(item.id)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${activeTab === item.id
-                    ? 'bg-cyan-500/20 border border-cyan-500/50 text-cyan-400'
-                    : 'hover:bg-slate-800/50 text-slate-300 hover:text-white border border-transparent'
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all btn-futuristic ${activeTab === item.id
+                      ? 'bg-cyan-500/20 border border-cyan-400/60 text-cyan-400 neon-glow-cyan'
+                      : 'hover:bg-slate-800/60 text-slate-300 hover:text-white border border-transparent hover:border-cyan-500/30'
                     }`}
                 >
                   <span className="text-lg">{item.icon}</span>
-                  <span className="text-sm font-medium">{item.label}</span>
+                  <span className={`text-sm font-medium ${activeTab === item.id ? 'text-glow-subtle' : ''}`}>{item.label}</span>
                 </button>
               ))}
             </div>
@@ -265,20 +265,20 @@ export const Layout: React.FC<LayoutProps> = ({
           </main>
 
           {/* Footer */}
-          <footer className="border-t border-slate-800 bg-slate-900/80 backdrop-blur-md">
+          <footer className="border-t border-cyan-500/20 bg-gradient-to-r from-slate-900/95 via-slate-950/95 to-slate-900/95 backdrop-blur-xl">
             <div className="px-6 py-3">
               <div className="flex items-center justify-between text-sm text-slate-400 flex-wrap gap-2">
                 <div className="flex items-center gap-4">
-                  <span>Epoch: 12,847</span>
-                  <span className="text-cyan-400">●</span>
-                  <span>GALACTIC: $0.042</span>
-                  <span className="text-cyan-400">●</span>
-                  <span>TVL: $12.4M</span>
+                  <span className="counter-value">Epoch: 12,847</span>
+                  <span className="text-cyan-400 animate-breathe">●</span>
+                  <span className="text-cyan-400">GALACTIC: $0.042</span>
+                  <span className="text-cyan-400 animate-breathe">●</span>
+                  <span className="text-green-400">TVL: $12.4M</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <a href="#" className="hover:text-cyan-400 transition-colors">Docs</a>
-                  <a href="#" className="hover:text-cyan-400 transition-colors">Discord</a>
-                  <a href="#" className="hover:text-cyan-400 transition-colors">Twitter</a>
+                  <a href="#" className="hover:text-cyan-400 transition-colors hover:text-glow">Docs</a>
+                  <a href="#" className="hover:text-cyan-400 transition-colors hover:text-glow">Discord</a>
+                  <a href="#" className="hover:text-cyan-400 transition-colors hover:text-glow">Twitter</a>
                 </div>
               </div>
             </div>

@@ -43,11 +43,11 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, onClick
   const combatPower = Math.floor(
     (agent.stats.power * 3 + agent.stats.mobility * 2 + agent.stats.resilience * 2 + agent.stats.processing) / 8
   );
-  
+
   const cardRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
   const cornersRef = useRef<HTMLDivElement[]>([]);
-  
+
   // Animate stat bars on mount
   useEffect(() => {
     if (statsRef.current) {
@@ -61,7 +61,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, onClick
       });
     }
   }, []);
-  
+
   // Animate selection state
   useEffect(() => {
     if (cardRef.current) {
@@ -88,7 +88,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, onClick
       }
     }
   }, [isSelected]);
-  
+
   const handleMouseEnter = () => {
     if (cardRef.current && !isSelected) {
       anime({
@@ -99,7 +99,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, onClick
       });
     }
   };
-  
+
   const handleMouseLeave = () => {
     if (cardRef.current && !isSelected) {
       anime({
@@ -110,7 +110,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, onClick
       });
     }
   };
-  
+
   const handleClick = () => {
     if (cardRef.current) {
       anime({
@@ -127,11 +127,11 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, onClick
     <div
       ref={cardRef}
       className={`
-        relative p-4 rounded-lg border cursor-pointer
-        bg-gradient-to-br from-slate-900/90 to-slate-800/90
-        ${isSelected 
-          ? 'border-cyan-400 shadow-lg shadow-cyan-400/20' 
-          : 'border-slate-700 hover:border-cyan-400/50'
+        relative p-4 rounded-lg border cursor-pointer holographic-shimmer card-3d
+        bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-sm
+        ${isSelected
+          ? 'border-cyan-400 neon-glow-cyan'
+          : 'border-slate-700/50 hover:border-cyan-400/50'
         }
       `}
       onClick={handleClick}
@@ -147,8 +147,8 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, onClick
       {/* Header */}
       <div className="flex justify-between items-start mb-3">
         <div>
-          <h3 className="text-lg font-bold text-white">{agent.name}</h3>
-          <p className={`text-sm ${CLASS_COLORS[agent.class]}`}>
+          <h3 className="text-lg font-bold text-white glitch-text">{agent.name}</h3>
+          <p className={`text-sm ${CLASS_COLORS[agent.class]} text-glow-subtle`}>
             {CLASS_NAMES[agent.class]}
           </p>
           <p className="text-xs text-slate-400">
@@ -156,10 +156,10 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, onClick
           </p>
         </div>
         <div className="text-right">
-          <div className="text-2xl font-bold text-cyan-400">
+          <div className="text-2xl font-bold text-cyan-400 text-glow counter-value">
             Lv.{agent.level}
           </div>
-          <div className="text-xs text-slate-400">
+          <div className="text-xs text-slate-400 counter-value">
             {agent.experience.toLocaleString()} XP
           </div>
         </div>
@@ -176,9 +176,9 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, onClick
       </div>
 
       {/* Combat Power */}
-      <div className="flex justify-between items-center pt-2 border-t border-slate-700">
+      <div className="flex justify-between items-center pt-2 border-t border-cyan-500/20">
         <span className="text-xs text-slate-400">Combat Power</span>
-        <span className="text-lg font-bold text-orange-400">{combatPower}</span>
+        <span className="text-lg font-bold text-orange-400 text-glow-subtle counter-value">{combatPower}</span>
       </div>
 
       {/* Status Indicators */}
@@ -220,18 +220,18 @@ const STAT_COLORS = {
 
 const StatBar: React.FC<StatBarProps> = ({ label, value, color }) => {
   const percentage = Math.min((value / 100) * 100, 100);
-  
+
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs text-slate-400 w-8">{label}</span>
-      <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
-        <div 
-          className={`stat-bar-fill h-full ${STAT_COLORS[color]} rounded-full`}
+      <span className="text-xs text-slate-400 w-8 font-medium">{label}</span>
+      <div className="flex-1 h-2 bg-slate-700/60 rounded-full overflow-hidden">
+        <div
+          className={`stat-bar-fill h-full ${STAT_COLORS[color]} rounded-full progress-animated`}
           style={{ width: '0%' }}
           data-width={`${percentage}%`}
         />
       </div>
-      <span className="text-xs text-white w-6 text-right">{value}</span>
+      <span className="text-xs text-white w-6 text-right counter-value">{value}</span>
     </div>
   );
 };
