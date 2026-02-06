@@ -8,7 +8,7 @@ import { ConnectButton, useCurrentAccount } from '@mysten/dapp-kit';
  * Enhanced with anime.js animations
  */
 
-export type TabType = 'base' | 'map' | 'hangar' | 'agents' | 'missions' | 'defi' | 'governance';
+export type TabType = 'base' | 'map' | 'hangar' | 'agents' | 'missions' | 'defi' | 'governance' | 'minter';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -33,6 +33,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'missions', icon: '📜', label: 'Missions' },
   { id: 'defi', icon: '⚡', label: 'DeFi' },
   { id: 'governance', icon: '🏛️', label: 'Governance' },
+  { id: 'minter', icon: '🧬', label: 'Char Minter' },
 ];
 
 // Generate deterministic star positions with more variety

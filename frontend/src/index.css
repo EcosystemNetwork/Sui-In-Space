@@ -166,3 +166,46 @@ body {
   background: rgba(34, 211, 238, 0.3);
   color: white;
 }
+
+/* Character Minter - DNA Helix twist animation */
+@keyframes dna-twist {
+  0% {
+    transform: scaleX(1);
+  }
+  50% {
+    transform: scaleX(0.2);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+/* Character Minter - Minting progress bar */
+.minting-progress {
+  animation: minting-fill 3s ease-in-out forwards;
+}
+
+@keyframes minting-fill {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+/* Character Minter - Icon pulse during minting */
+.minting-icon-pulse {
+  animation: icon-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes icon-pulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.6));
+  }
+  50% {
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.8));
+  }
+}
