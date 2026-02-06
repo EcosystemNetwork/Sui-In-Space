@@ -13,6 +13,7 @@ export function AuthButton() {
   const { mutate: disconnectWallet } = useDisconnectWallet();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [walletModalOpen, setWalletModalOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
@@ -32,10 +33,18 @@ export function AuthButton() {
   if (auth.isConnected && auth.address) {
     return (
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-slate-800/50 border border-slate-700">
+        <button
+          onClick={() => {
+            navigator.clipboard.writeText(auth.address!);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          }}
+          title={auth.address!}
+          className="flex items-center gap-2 px-3 py-1.5 rounded bg-slate-800/50 border border-slate-700 hover:border-cyan-500/50 transition-colors cursor-pointer group relative"
+        >
           <span className="text-green-400">●</span>
           <span className="text-slate-300 text-sm font-mono">
-            {auth.address.slice(0, 6)}...{auth.address.slice(-4)}
+            {copied ? 'Copied!' : `${auth.address!.slice(0, 6)}...${auth.address!.slice(-4)}`}
           </span>
           {auth.method === 'zklogin' && (
             <span className="text-xs px-1.5 py-0.5 rounded bg-purple-500/20 border border-purple-500/30 text-purple-300">
@@ -47,7 +56,7 @@ export function AuthButton() {
               Wallet
             </span>
           )}
-        </div>
+        </button>
         <button
           onClick={() => {
             if (auth.method === 'wallet') {
