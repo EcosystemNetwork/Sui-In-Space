@@ -6,3 +6,4 @@ export { DefiView } from './DefiView';
 export { GovernanceView } from './GovernanceView';
 export { SpaceBaseMapView } from './SpaceBaseMapView';
 export { CharacterMinterView } from './CharacterMinterView';
+export { BuildView } from './BuildView';
