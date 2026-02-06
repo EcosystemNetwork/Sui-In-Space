@@ -121,14 +121,8 @@ export const Layout: React.FC<LayoutProps> = ({
     if (starsContainerRef.current) {
       const starElements = starsContainerRef.current.querySelectorAll('.star');
       animate(starElements, {
-        opacity: ((_el: HTMLElement, i: number) => [
-          { value: 0.2, duration: 0 },
-          { value: stars[i % stars.length].opacity, duration: 1000 + (i % 5) * 500 },
-        ]) as unknown as number,
-        scale: [
-          { value: 0.5, duration: 0 },
-          { value: 1, duration: 800 },
-        ],
+        opacity: ((_el: HTMLElement, i: number) => [0, stars[i % stars.length].opacity]) as unknown as number,
+        scale: [0.5, 1],
         delay: stagger(20),
         ease: 'outCubic',
       });
