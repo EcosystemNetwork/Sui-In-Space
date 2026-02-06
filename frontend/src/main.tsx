@@ -10,9 +10,9 @@ import '@mysten/dapp-kit/dist/index.css';
 
 // Configure Sui networks
 const { networkConfig } = createNetworkConfig({
-  mainnet: { url: getJsonRpcFullnodeUrl('mainnet') },
-  testnet: { url: getJsonRpcFullnodeUrl('testnet') },
-  devnet: { url: getJsonRpcFullnodeUrl('devnet') },
+  mainnet: { url: getJsonRpcFullnodeUrl('mainnet'), network: 'mainnet' },
+  testnet: { url: getJsonRpcFullnodeUrl('testnet'), network: 'testnet' },
+  devnet: { url: getJsonRpcFullnodeUrl('devnet'), network: 'devnet' },
 });
 
 // Create React Query client

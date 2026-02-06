@@ -83,7 +83,7 @@ export const animationPresets = {
     ease: 'inOutSine',
     loop: true,
   },
-} as const;
+} as const satisfies Record<string, AnimationParams>;
 
 /**
  * Hook for running anime.js animations with cleanup
