@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect, useRef } from 'react';
-import anime from 'animejs';
+import { animate, stagger } from 'animejs';
 import { ConnectButton, useCurrentAccount } from '@mysten/dapp-kit';
 
 /**
@@ -83,58 +83,54 @@ export const Layout: React.FC<LayoutProps> = ({
   useEffect(() => {
     // Animate header entrance
     if (headerRef.current) {
-      anime({
-        targets: headerRef.current,
+      animate(headerRef.current, {
         translateY: [-20, 0],
         opacity: [0, 1],
         duration: 800,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
       });
     }
 
     // Animate navigation entrance
     if (navRef.current) {
-      anime({
-        targets: navRef.current.querySelectorAll('button'),
+      animate(navRef.current.querySelectorAll('button'), {
         translateY: [-10, 0],
         opacity: [0, 1],
         duration: 600,
-        delay: anime.stagger(80, { start: 200 }),
-        easing: 'easeOutCubic',
+        delay: stagger(80, { start: 200 }),
+        ease: 'outCubic',
       });
     }
 
     // Animate logo with glow effect
     if (logoRef.current) {
-      anime({
-        targets: logoRef.current,
+      animate(logoRef.current, {
         boxShadow: [
           '0 0 0px rgba(34, 211, 238, 0)',
           '0 0 20px rgba(34, 211, 238, 0.6)',
           '0 0 10px rgba(34, 211, 238, 0.3)',
         ],
         duration: 2000,
-        easing: 'easeInOutSine',
+        ease: 'inOutSine',
         loop: true,
-        direction: 'alternate',
+        alternate: true,
       });
     }
 
     // Animate stars with twinkling effect
     if (starsContainerRef.current) {
       const starElements = starsContainerRef.current.querySelectorAll('.star');
-      anime({
-        targets: starElements,
-        opacity: (_el: Element, i: number) => [
+      animate(starElements, {
+        opacity: ((_el: HTMLElement, i: number) => [
           { value: 0.2, duration: 0 },
           { value: stars[i % stars.length].opacity, duration: 1000 + (i % 5) * 500 },
-        ],
+        ]) as unknown as number,
         scale: [
           { value: 0.5, duration: 0 },
           { value: 1, duration: 800 },
         ],
-        delay: anime.stagger(20),
-        easing: 'easeOutCubic',
+        delay: stagger(20),
+        ease: 'outCubic',
       });
     }
   }, [stars]);
@@ -142,12 +138,11 @@ export const Layout: React.FC<LayoutProps> = ({
   // Animate main content when tab changes
   useEffect(() => {
     if (mainRef.current) {
-      anime({
-        targets: mainRef.current,
+      animate(mainRef.current, {
         opacity: [0, 1],
         translateY: [20, 0],
         duration: 400,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
       });
     }
   }, [activeTab]);

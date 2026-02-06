@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback } from 'react';
-import anime from 'animejs';
+import { animate, stagger, set, type JSAnimation, type AnimationParams, type TargetsParam } from 'animejs';
 
 /**
  * Custom hook for anime.js animations
@@ -13,27 +13,27 @@ export const animationPresets = {
     opacity: [0, 1],
     translateY: [20, 0],
     duration: 600,
-    easing: 'easeOutCubic',
+    ease: 'outCubic',
   },
   // Fade in from above
   fadeInDown: {
     opacity: [0, 1],
     translateY: [-20, 0],
     duration: 600,
-    easing: 'easeOutCubic',
+    ease: 'outCubic',
   },
   // Scale up entrance
   scaleIn: {
     opacity: [0, 1],
     scale: [0.9, 1],
     duration: 500,
-    easing: 'easeOutBack',
+    ease: 'outBack',
   },
   // Pulse effect
   pulse: {
     scale: [1, 1.05, 1],
     duration: 800,
-    easing: 'easeInOutSine',
+    ease: 'inOutSine',
   },
   // Glow effect (for holographic UI)
   glow: {
@@ -43,7 +43,7 @@ export const animationPresets = {
       '0 0 0px rgba(34, 211, 238, 0)',
     ],
     duration: 2000,
-    easing: 'easeInOutSine',
+    ease: 'inOutSine',
     loop: true,
   },
   // Slide in from left
@@ -51,28 +51,28 @@ export const animationPresets = {
     opacity: [0, 1],
     translateX: [-30, 0],
     duration: 500,
-    easing: 'easeOutCubic',
+    ease: 'outCubic',
   },
   // Slide in from right
   slideInRight: {
     opacity: [0, 1],
     translateX: [30, 0],
     duration: 500,
-    easing: 'easeOutCubic',
+    ease: 'outCubic',
   },
   // Float effect (for space elements)
   float: {
     translateY: [-5, 5],
     duration: 3000,
-    easing: 'easeInOutSine',
-    direction: 'alternate' as const,
+    ease: 'inOutSine',
+    alternate: true,
     loop: true,
   },
   // Shimmer effect
   shimmer: {
     opacity: [0.5, 1, 0.5],
     duration: 2000,
-    easing: 'easeInOutSine',
+    ease: 'inOutSine',
     loop: true,
   },
   // Star twinkle effect
@@ -80,29 +80,26 @@ export const animationPresets = {
     opacity: [0.2, 1, 0.2],
     scale: [0.8, 1.2, 0.8],
     duration: 2000,
-    easing: 'easeInOutSine',
+    ease: 'inOutSine',
     loop: true,
   },
-};
+} as const satisfies Record<string, AnimationParams>;
 
 /**
  * Hook for running anime.js animations with cleanup
  */
 export function useAnime<T extends HTMLElement = HTMLElement>() {
   const elementRef = useRef<T>(null);
-  const animationRef = useRef<anime.AnimeInstance | null>(null);
+  const animationRef = useRef<JSAnimation | null>(null);
 
-  const animate = useCallback((config: anime.AnimeParams) => {
+  const runAnimate = useCallback((config: AnimationParams) => {
     if (elementRef.current) {
       // Clean up previous animation
       if (animationRef.current) {
         animationRef.current.pause();
       }
       
-      animationRef.current = anime({
-        targets: elementRef.current,
-        ...config,
-      });
+      animationRef.current = animate(elementRef.current, config);
       
       return animationRef.current;
     }
@@ -123,30 +120,29 @@ export function useAnime<T extends HTMLElement = HTMLElement>() {
     };
   }, []);
 
-  return { elementRef, animate, stop };
+  return { elementRef, animate: runAnimate, stop };
 }
 
 /**
  * Hook for staggered list animations
  */
 export function useStaggeredAnimation<T extends HTMLElement = HTMLElement>(
-  config: anime.AnimeParams = {},
+  config: AnimationParams = {},
   staggerDelay: number = 100
 ) {
   const containerRef = useRef<T>(null);
-  const animationRef = useRef<anime.AnimeInstance | null>(null);
+  const animationRef = useRef<JSAnimation | null>(null);
 
   const animateChildren = useCallback((selector: string = '> *') => {
     if (containerRef.current) {
       const children = containerRef.current.querySelectorAll(selector);
       if (children.length > 0) {
-        animationRef.current = anime({
-          targets: children,
+        animationRef.current = animate(children, {
           opacity: [0, 1],
           translateY: [20, 0],
           duration: 600,
-          easing: 'easeOutCubic',
-          delay: anime.stagger(staggerDelay),
+          ease: 'outCubic',
+          delay: stagger(staggerDelay),
           ...config,
         });
       }
@@ -168,7 +164,7 @@ export function useStaggeredAnimation<T extends HTMLElement = HTMLElement>(
  * Hook for entrance animations that trigger once on mount
  */
 export function useEntranceAnimation<T extends HTMLElement = HTMLElement>(
-  preset: keyof typeof animationPresets | anime.AnimeParams = 'fadeInUp',
+  preset: keyof typeof animationPresets | AnimationParams = 'fadeInUp',
   delay: number = 0
 ) {
   const elementRef = useRef<T>(null);
@@ -178,10 +174,9 @@ export function useEntranceAnimation<T extends HTMLElement = HTMLElement>(
       const config = typeof preset === 'string' ? animationPresets[preset] : preset;
       
       // Set initial state
-      anime.set(elementRef.current, { opacity: 0 });
+      set(elementRef.current, { opacity: 0 });
       
-      const animation = anime({
-        targets: elementRef.current,
+      const animation = animate(elementRef.current, {
         ...config,
         delay,
       });
@@ -199,11 +194,11 @@ export function useEntranceAnimation<T extends HTMLElement = HTMLElement>(
  * Hook for hover animations
  */
 export function useHoverAnimation<T extends HTMLElement = HTMLElement>(
-  enterConfig: anime.AnimeParams = { scale: 1.05, duration: 300 },
-  leaveConfig: anime.AnimeParams = { scale: 1, duration: 300 }
+  enterConfig: AnimationParams = { scale: 1.05, duration: 300 },
+  leaveConfig: AnimationParams = { scale: 1, duration: 300 }
 ) {
   const elementRef = useRef<T>(null);
-  const animationRef = useRef<anime.AnimeInstance | null>(null);
+  const animationRef = useRef<JSAnimation | null>(null);
 
   useEffect(() => {
     const element = elementRef.current;
@@ -211,19 +206,17 @@ export function useHoverAnimation<T extends HTMLElement = HTMLElement>(
 
     const handleMouseEnter = () => {
       if (animationRef.current) animationRef.current.pause();
-      animationRef.current = anime({
-        targets: element,
+      animationRef.current = animate(element, {
         ...enterConfig,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
       });
     };
 
     const handleMouseLeave = () => {
       if (animationRef.current) animationRef.current.pause();
-      animationRef.current = anime({
-        targets: element,
+      animationRef.current = animate(element, {
         ...leaveConfig,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
       });
     };
 
@@ -251,11 +244,10 @@ export function useProgressAnimation(
 
   useEffect(() => {
     if (elementRef.current) {
-      anime({
-        targets: elementRef.current,
+      animate(elementRef.current, {
         width: `${Math.min(100, Math.max(0, value))}%`,
         duration,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
       });
     }
   }, [value, duration]);
@@ -278,13 +270,12 @@ export function useCounterAnimation(
     if (elementRef.current) {
       const element = elementRef.current;
       
-      anime({
-        targets: currentValue.current,
+      animate(currentValue.current, {
         value: targetValue,
         duration,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
         round: 1,
-        update: () => {
+        onRender: () => {
           element.textContent = formatFn(currentValue.current.value);
         },
       });
@@ -298,32 +289,28 @@ export function useCounterAnimation(
  * Utility function for running one-off animations
  */
 export function runAnimation(
-  targets: anime.AnimeAnimParams['targets'],
-  config: anime.AnimeParams
-): anime.AnimeInstance {
-  return anime({
-    targets,
-    ...config,
-  });
+  targets: TargetsParam,
+  config: AnimationParams
+): JSAnimation {
+  return animate(targets, config);
 }
 
 /**
  * Create a staggered entrance animation for multiple elements
  */
 export function staggerEntrance(
-  targets: anime.AnimeAnimParams['targets'],
+  targets: TargetsParam,
   staggerDelay: number = 100,
-  config: Partial<anime.AnimeParams> = {}
-): anime.AnimeInstance {
-  return anime({
-    targets,
+  config: Partial<AnimationParams> = {}
+): JSAnimation {
+  return animate(targets, {
     opacity: [0, 1],
     translateY: [30, 0],
     duration: 600,
-    easing: 'easeOutCubic',
-    delay: anime.stagger(staggerDelay),
+    ease: 'outCubic',
+    delay: stagger(staggerDelay),
     ...config,
   });
 }
 
-export default anime;
+export { animate, stagger, set };

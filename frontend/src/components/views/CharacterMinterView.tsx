@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import anime from 'animejs';
+import { animate, stagger } from 'animejs';
 
 /**
  * Character Minter View Component
@@ -216,23 +216,21 @@ export const CharacterMinterView: React.FC = () => {
   // Initial entrance animations
   useEffect(() => {
     if (headerRef.current) {
-      anime({
-        targets: headerRef.current,
+      animate(headerRef.current, {
         translateY: [-20, 0],
         opacity: [0, 1],
         duration: 600,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
       });
     }
     if (configRef.current) {
       const sections = configRef.current.querySelectorAll('.config-section');
-      anime({
-        targets: sections,
+      animate(sections, {
         translateY: [30, 0],
         opacity: [0, 1],
         duration: 500,
-        delay: anime.stagger(100, { start: 200 }),
-        easing: 'easeOutCubic',
+        delay: stagger(100, { start: 200 }),
+        ease: 'outCubic',
       });
     }
   }, []);
@@ -240,12 +238,11 @@ export const CharacterMinterView: React.FC = () => {
   // Animate preview when selections change
   useEffect(() => {
     if (previewRef.current) {
-      anime({
-        targets: previewRef.current,
+      animate(previewRef.current, {
         scale: [0.98, 1],
         opacity: [0.7, 1],
         duration: 300,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
       });
     }
   }, [selectedArchetype, selectedRace, selectedWeapon, selectedArmor, purityLevel]);
@@ -269,11 +266,10 @@ export const CharacterMinterView: React.FC = () => {
 
     // Minting ritual animation
     if (mintingOverlayRef.current) {
-      anime({
-        targets: mintingOverlayRef.current,
+      animate(mintingOverlayRef.current, {
         opacity: [0, 1],
         duration: 500,
-        easing: 'easeInOutQuad',
+        ease: 'inOutQuad',
       });
     }
 
@@ -285,12 +281,11 @@ export const CharacterMinterView: React.FC = () => {
         requestAnimationFrame(() => setStatsAnimated(true));
       });
       if (resultRef.current) {
-        anime({
-          targets: resultRef.current,
+        animate(resultRef.current, {
           translateY: [40, 0],
           opacity: [0, 1],
           duration: 800,
-          easing: 'easeOutCubic',
+          ease: 'outCubic',
         });
       }
     }, 3000);

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import anime from 'animejs';
+import { animate, stagger } from 'animejs';
 
 /**
  * Activity Log Component
@@ -101,13 +101,12 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ maxEvents = 5, compact
   useEffect(() => {
     if (eventsRef.current) {
       const eventItems = eventsRef.current.querySelectorAll('.event-item');
-      anime({
-        targets: eventItems,
+      animate(eventItems, {
         translateX: [-20, 0],
         opacity: [0, 1],
         duration: 500,
-        delay: anime.stagger(80, { start: 100 }),
-        easing: 'easeOutCubic',
+        delay: stagger(80, { start: 100 }),
+        ease: 'outCubic',
       });
     }
   }, []);

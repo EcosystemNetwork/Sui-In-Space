@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import anime from 'animejs';
+import { animate, stagger } from 'animejs';
 import { AgentCard } from '../AgentCard';
 import type { Agent } from '../../types';
 import { AgentType, AgentClass } from '../../types';
@@ -119,36 +119,33 @@ export const AgentsView: React.FC = () => {
   // Initial entrance animations
   useEffect(() => {
     if (headerRef.current) {
-      anime({
-        targets: headerRef.current,
+      animate(headerRef.current, {
         translateY: [-20, 0],
         opacity: [0, 1],
         duration: 600,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
       });
     }
 
     if (statsRef.current) {
       const statCards = statsRef.current.querySelectorAll('.stat-card');
-      anime({
-        targets: statCards,
+      animate(statCards, {
         translateY: [20, 0],
         opacity: [0, 1],
         duration: 500,
-        delay: anime.stagger(80, { start: 200 }),
-        easing: 'easeOutCubic',
+        delay: stagger(80, { start: 200 }),
+        ease: 'outCubic',
       });
     }
 
     if (filterRef.current) {
       const buttons = filterRef.current.querySelectorAll('button');
-      anime({
-        targets: buttons,
+      animate(buttons, {
         translateX: [-20, 0],
         opacity: [0, 1],
         duration: 400,
-        delay: anime.stagger(50, { start: 400 }),
-        easing: 'easeOutCubic',
+        delay: stagger(50, { start: 400 }),
+        ease: 'outCubic',
       });
     }
   }, [viewMode]);
@@ -157,13 +154,12 @@ export const AgentsView: React.FC = () => {
   useEffect(() => {
     if (gridRef.current) {
       const cards = gridRef.current.querySelectorAll('.agent-card-wrapper');
-      anime({
-        targets: cards,
+      animate(cards, {
         translateY: [30, 0],
         opacity: [0, 1],
         duration: 500,
-        delay: anime.stagger(80),
-        easing: 'easeOutCubic',
+        delay: stagger(80),
+        ease: 'outCubic',
       });
     }
   }, [filterClass, viewMode]);
@@ -171,12 +167,11 @@ export const AgentsView: React.FC = () => {
   // Animate actions panel
   useEffect(() => {
     if (actionsRef.current && selectedAgent) {
-      anime({
-        targets: actionsRef.current,
+      animate(actionsRef.current, {
         translateY: [20, 0],
         opacity: [0, 1],
         duration: 400,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
       });
     }
   }, [selectedAgent]);

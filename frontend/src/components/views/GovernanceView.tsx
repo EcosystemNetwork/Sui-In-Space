@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import anime from 'animejs';
+import { animate, stagger } from 'animejs';
 import { ProposalType, ProposalStatus } from '../../types';
 
 /**
@@ -145,24 +145,22 @@ export const GovernanceView: React.FC = () => {
   // Initial entrance animations
   useEffect(() => {
     if (headerRef.current) {
-      anime({
-        targets: headerRef.current,
+      animate(headerRef.current, {
         translateY: [-20, 0],
         opacity: [0, 1],
         duration: 600,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
       });
     }
     
     if (statsRef.current) {
       const statCards = statsRef.current.querySelectorAll('.stat-card');
-      anime({
-        targets: statCards,
+      animate(statCards, {
         translateY: [20, 0],
         opacity: [0, 1],
         duration: 500,
-        delay: anime.stagger(80, { start: 200 }),
-        easing: 'easeOutCubic',
+        delay: stagger(80, { start: 200 }),
+        ease: 'outCubic',
       });
     }
   }, []);
@@ -170,34 +168,31 @@ export const GovernanceView: React.FC = () => {
   // Animate content when tab changes
   useEffect(() => {
     if (contentRef.current) {
-      anime({
-        targets: contentRef.current,
+      animate(contentRef.current, {
         translateY: [30, 0],
         opacity: [0, 1],
         duration: 500,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
       });
       
       const items = contentRef.current.querySelectorAll('.animated-item');
-      anime({
-        targets: items,
+      animate(items, {
         translateY: [20, 0],
         opacity: [0, 1],
         duration: 400,
-        delay: anime.stagger(80, { start: 200 }),
-        easing: 'easeOutCubic',
+        delay: stagger(80, { start: 200 }),
+        ease: 'outCubic',
       });
       
       // Animate vote progress bars
       const progressBars = contentRef.current.querySelectorAll('.vote-progress');
       progressBars.forEach((bar, index) => {
         const width = bar.getAttribute('data-width');
-        anime({
-          targets: bar,
+        animate(bar, {
           width: ['0%', width || '0%'],
           duration: 800,
           delay: 400 + index * 100,
-          easing: 'easeOutCubic',
+          ease: 'outCubic',
         });
       });
     }

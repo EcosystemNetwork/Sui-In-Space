@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import anime from 'animejs';
+import { animate, stagger } from 'animejs';
 
 /**
  * Star Map View Component
@@ -59,58 +59,59 @@ export const StarMapView: React.FC = () => {
   useEffect(() => {
     // Animate header
     if (headerRef.current) {
-      anime({
-        targets: headerRef.current,
+      animate(headerRef.current, {
         translateY: [-20, 0],
         opacity: [0, 1],
         duration: 600,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
       });
     }
     
     // Animate map container
     if (mapRef.current) {
-      anime({
-        targets: mapRef.current,
+      animate(mapRef.current, {
         opacity: [0, 1],
         scale: [0.95, 1],
         duration: 800,
         delay: 200,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
       });
       
       // Animate star systems appearing
       const systems = mapRef.current.querySelectorAll('.star-system');
-      anime({
-        targets: systems,
+      animate(systems, {
         opacity: [0, 1],
         scale: [0, 1],
         duration: 600,
-        delay: anime.stagger(100, { start: 400 }),
-        easing: 'easeOutBack',
+        delay: stagger(100, { start: 400 }),
+        ease: 'outBack',
       });
       
       // Animate connection lines
       const lines = mapRef.current.querySelectorAll('.connection-line');
-      anime({
-        targets: lines,
-        strokeDashoffset: [anime.setDashoffset, 0],
+      animate(lines, {
+        strokeDashoffset: [(el: SVGLineElement) => {
+          const x1 = parseFloat(el.getAttribute('x1') || '0');
+          const y1 = parseFloat(el.getAttribute('y1') || '0');
+          const x2 = parseFloat(el.getAttribute('x2') || '0');
+          const y2 = parseFloat(el.getAttribute('y2') || '0');
+          return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+        }, 0] as unknown as number,
         duration: 1500,
-        delay: anime.stagger(200, { start: 600 }),
-        easing: 'easeOutCubic',
+        delay: stagger(200, { start: 600 }),
+        ease: 'outCubic',
       });
     }
     
     // Animate stats
     if (statsRef.current) {
       const statCards = statsRef.current.querySelectorAll('.stat-card');
-      anime({
-        targets: statCards,
+      animate(statCards, {
         translateY: [20, 0],
         opacity: [0, 1],
         duration: 500,
-        delay: anime.stagger(100, { start: 800 }),
-        easing: 'easeOutCubic',
+        delay: stagger(100, { start: 800 }),
+        ease: 'outCubic',
       });
     }
   }, []);
@@ -118,23 +119,21 @@ export const StarMapView: React.FC = () => {
   // Animate info panel when selection changes
   useEffect(() => {
     if (infoPanelRef.current && selectedSystem) {
-      anime({
-        targets: infoPanelRef.current,
+      animate(infoPanelRef.current, {
         translateX: [20, 0],
         opacity: [0, 1],
         duration: 400,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
       });
     }
   }, [selectedSystem]);
   
   const handleSystemClick = (system: StarSystem, e: React.MouseEvent) => {
     const button = e.currentTarget;
-    anime({
-      targets: button,
+    animate(button, {
       scale: [1, 1.3, 1.1],
       duration: 300,
-      easing: 'easeOutBack',
+      ease: 'outBack',
     });
     setSelectedSystem(system);
   };

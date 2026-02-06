@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import anime from 'animejs';
+import { animate, stagger } from 'animejs';
 import { MissionType, MissionStatus } from '../../types';
 
 /**
@@ -183,59 +183,54 @@ export const MissionsView: React.FC = () => {
   // Initial entrance animations
   useEffect(() => {
     if (headerRef.current) {
-      anime({
-        targets: headerRef.current,
+      animate(headerRef.current, {
         translateY: [-20, 0],
         opacity: [0, 1],
         duration: 600,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
       });
     }
     
     if (activeMissionsRef.current) {
-      anime({
-        targets: activeMissionsRef.current,
+      animate(activeMissionsRef.current, {
         translateX: [-30, 0],
         opacity: [0, 1],
         duration: 600,
         delay: 200,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
       });
       
       // Animate progress bar
       const progressBar = activeMissionsRef.current.querySelector('.progress-bar-fill');
       if (progressBar) {
-        anime({
-          targets: progressBar,
+        animate(progressBar, {
           width: ['0%', '67%'],
           duration: 1200,
           delay: 400,
-          easing: 'easeOutCubic',
+          ease: 'outCubic',
         });
       }
     }
     
     if (statsRef.current) {
       const statCards = statsRef.current.querySelectorAll('.stat-card');
-      anime({
-        targets: statCards,
+      animate(statCards, {
         translateY: [20, 0],
         opacity: [0, 1],
         duration: 500,
-        delay: anime.stagger(80, { start: 300 }),
-        easing: 'easeOutCubic',
+        delay: stagger(80, { start: 300 }),
+        ease: 'outCubic',
       });
     }
     
     if (filterRef.current) {
       const buttons = filterRef.current.querySelectorAll('button');
-      anime({
-        targets: buttons,
+      animate(buttons, {
         translateX: [-20, 0],
         opacity: [0, 1],
         duration: 400,
-        delay: anime.stagger(50, { start: 500 }),
-        easing: 'easeOutCubic',
+        delay: stagger(50, { start: 500 }),
+        ease: 'outCubic',
       });
     }
   }, []);
@@ -244,13 +239,12 @@ export const MissionsView: React.FC = () => {
   useEffect(() => {
     if (gridRef.current) {
       const cards = gridRef.current.querySelectorAll('.mission-card');
-      anime({
-        targets: cards,
+      animate(cards, {
         translateY: [30, 0],
         opacity: [0, 1],
         duration: 500,
-        delay: anime.stagger(80),
-        easing: 'easeOutCubic',
+        delay: stagger(80),
+        ease: 'outCubic',
       });
     }
   }, [filterType]);
