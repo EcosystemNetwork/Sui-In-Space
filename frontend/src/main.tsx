@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SuiClientProvider, WalletProvider, createNetworkConfig } from '@mysten/dapp-kit';
 import { getJsonRpcFullnodeUrl } from '@mysten/sui/jsonRpc';
+import { AuthProvider } from './hooks/useAuth';
 import { MockActionsProvider } from './hooks/useMockActions';
 import App from './App';
 import './index.css';
@@ -23,9 +24,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <SuiClientProvider networks={networkConfig} defaultNetwork="mainnet">
         <WalletProvider autoConnect>
-          <MockActionsProvider>
-            <App />
-          </MockActionsProvider>
+          <AuthProvider>
+            <MockActionsProvider>
+              <App />
+            </MockActionsProvider>
+          </AuthProvider>
         </WalletProvider>
       </SuiClientProvider>
     </QueryClientProvider>
