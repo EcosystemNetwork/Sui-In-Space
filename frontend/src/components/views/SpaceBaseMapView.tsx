@@ -8,13 +8,6 @@ import anime from 'animejs';
 
 // ============ Types ============
 
-interface SidebarItem {
-  id: string;
-  name: string;
-  icon: string;
-  label: string;
-}
-
 interface Location {
   id: string;
   name: string;
