@@ -498,7 +498,7 @@ export interface UIState {
   selectedShip: ObjectId | null;
   selectedPlanet: ObjectId | null;
   selectedStation: ObjectId | null;
-  activeTab: 'base' | 'map' | 'hangar' | 'agents' | 'missions' | 'defi' | 'governance' | 'minter' | 'build';
+  activeTab: 'base' | 'map' | 'hangar' | 'agents' | 'missions' | 'defi' | 'governance' | 'minter';
 }
 
 // ============ Build System Types ============
@@ -512,21 +512,6 @@ export interface BuildSuggestion {
   timestamp: number;
   status: 'pending' | 'accepted' | 'dismissed';
   txDigest?: string;
-}
-
-export interface RuleProposal {
-  id: string;
-  title: string;
-  description: string;
-  targetFile: string;
-  patch: Record<string, unknown>;
-  newMerkleRoot?: string;
-  proposedBy: string;
-  timestamp: number;
-  status: 'pending' | 'approved' | 'rejected' | 'applied';
-  onChainProposalId?: string;
-  votesFor?: number;
-  votesAgainst?: number;
 }
 
 // ============ Game Rules Types ============

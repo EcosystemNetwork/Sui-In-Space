@@ -18,8 +18,6 @@ const MissionsView = lazy(() => import('./components/views/MissionsView').then(m
 const DefiView = lazy(() => import('./components/views/DefiView').then(m => ({ default: m.DefiView })));
 const GovernanceView = lazy(() => import('./components/views/GovernanceView').then(m => ({ default: m.GovernanceView })));
 const CharacterMinterView = lazy(() => import('./components/views/CharacterMinterView').then(m => ({ default: m.CharacterMinterView })));
-const BuildView = lazy(() => import('./components/views/BuildView').then(m => ({ default: m.BuildView })));
-
 // Loading spinner for lazy components
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center h-64">
@@ -36,7 +34,7 @@ function App() {
   const { isConnected } = useAuth();
   const { mintAgent, buildShip } = useGameActions();
   const verification = useCodeVerification();
-  const { addSuggestion, addRuleProposal, suggestions, ruleProposals } = useBuildStore();
+  const { addSuggestion } = useBuildStore();
 
   // Load player data from Supabase when wallet connects
   usePlayerData();
@@ -46,9 +44,7 @@ function App() {
     const bridge = initBridge({
       store: useGameStore,
       addSuggestion,
-      addRuleProposal,
       getSuggestions: () => useBuildStore.getState().suggestions,
-      getRuleProposals: () => useBuildStore.getState().ruleProposals,
       mintAgent,
       buildShip,
       getVerification: () => verification,
@@ -59,7 +55,7 @@ function App() {
     return () => {
       delete window.suiInSpace;
     };
-  }, [isConnected, mintAgent, buildShip, addSuggestion, addRuleProposal, verification]);
+  }, [isConnected, mintAgent, buildShip, addSuggestion, verification]);
 
   const renderView = () => {
     switch (activeTab) {
@@ -79,8 +75,6 @@ function App() {
         return <GovernanceView />;
       case 'minter':
         return <CharacterMinterView />;
-      case 'build':
-        return <BuildView />;
       default:
         return <SpaceBaseMapView />;
     }
@@ -96,14 +90,8 @@ function App() {
     >
       {/* Verification warning banner */}
       {verification.mismatch && (
-        <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-sm flex items-center gap-2">
-          <span>Game rules mismatch detected. Your local rules differ from the community-approved version.</span>
-          <button
-            onClick={() => setActiveTab('build')}
-            className="ml-auto px-3 py-1 rounded text-xs bg-red-500/20 border border-red-500/50 hover:bg-red-500/30 transition-all"
-          >
-            View Details
-          </button>
+        <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
+          Game rules mismatch detected. Your local rules differ from the community-approved version.
         </div>
       )}
 
@@ -140,14 +128,6 @@ function App() {
                 <span className="text-slate-400">Stations Owned</span>
                 <span className="text-orange-400">2</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Pending Suggestions</span>
-                <span className="text-cyan-400">{suggestions.filter(s => s.status === 'pending').length}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Rule Proposals</span>
-                <span className="text-purple-400">{ruleProposals.filter(p => p.status === 'pending').length}</span>
-              </div>
             </div>
           </div>
 
@@ -178,13 +158,6 @@ function App() {
               >
                 <span className="text-xl">📜</span>
                 <span className="text-xs text-slate-300">Missions</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('build')}
-                className="p-3 rounded bg-slate-800/50 border border-slate-700 hover:border-cyan-500/50 hover:bg-slate-800 transition-all flex flex-col items-center gap-1"
-              >
-                <span className="text-xl">🔧</span>
-                <span className="text-xs text-slate-300">AI Builder</span>
               </button>
               <button
                 onClick={() => setActiveTab('minter')}

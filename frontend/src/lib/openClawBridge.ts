@@ -3,7 +3,7 @@
  * OpenClaw agents interact with the game through this bridge.
  */
 
-import type { BuildSuggestion, RuleProposal, CodeVerificationState, Agent, Ship, Station } from '../types';
+import type { BuildSuggestion, CodeVerificationState, Agent, Ship, Station } from '../types';
 import type { useGameStore } from '../hooks/useGameStore';
 import { AGENT_TYPES, AGENT_CLASSES, SHIP_CLASSES, STATION_TYPES } from '../config/contracts';
 
@@ -15,7 +15,6 @@ export interface SuiInSpaceBridge {
   // Read state
   getState: () => ReturnType<typeof getGameState>;
   getSuggestions: () => BuildSuggestion[];
-  getRuleProposals: () => RuleProposal[];
   isConnected: () => boolean;
 
   // Suggest builds
@@ -24,15 +23,6 @@ export interface SuiInSpaceBridge {
     params: Record<string, unknown>;
     description: string;
     suggestedBy?: string;
-  }) => string;
-
-  // Propose rule changes
-  proposeRule: (proposal: {
-    title: string;
-    description: string;
-    targetFile: string;
-    patch: Record<string, unknown>;
-    proposedBy?: string;
   }) => string;
 
   // Direct build (async — requires wallet approval)
@@ -104,9 +94,7 @@ function getGameState(store: GameStoreApi) {
 interface BridgeDeps {
   store: GameStoreApi;
   addSuggestion: (s: Omit<BuildSuggestion, 'id' | 'timestamp' | 'status'>) => string;
-  addRuleProposal: (p: Omit<RuleProposal, 'id' | 'timestamp' | 'status'>) => string;
   getSuggestions: () => BuildSuggestion[];
-  getRuleProposals: () => RuleProposal[];
   mintAgent: (name?: string, agentType?: number, agentClass?: number) => Promise<void>;
   buildShip: (shipClass: string, name?: string) => Promise<void>;
   getVerification: () => CodeVerificationState;
@@ -121,8 +109,6 @@ export function initBridge(deps: BridgeDeps): SuiInSpaceBridge {
 
     getSuggestions: () => deps.getSuggestions(),
 
-    getRuleProposals: () => deps.getRuleProposals(),
-
     isConnected: () => deps.isConnected(),
 
     suggest: (suggestion) => {
@@ -131,16 +117,6 @@ export function initBridge(deps: BridgeDeps): SuiInSpaceBridge {
         params: suggestion.params,
         description: suggestion.description,
         suggestedBy: suggestion.suggestedBy || 'OpenClaw-Agent',
-      });
-    },
-
-    proposeRule: (proposal) => {
-      return deps.addRuleProposal({
-        title: proposal.title,
-        description: proposal.description,
-        targetFile: proposal.targetFile,
-        patch: proposal.patch,
-        proposedBy: proposal.proposedBy || 'OpenClaw-Agent',
       });
     },
 

@@ -8,7 +8,7 @@ import { AuthButton } from './AuthButton';
  * Enhanced with anime.js animations
  */
 
-export type TabType = 'base' | 'map' | 'hangar' | 'agents' | 'missions' | 'defi' | 'governance' | 'minter' | 'build';
+export type TabType = 'base' | 'map' | 'hangar' | 'agents' | 'missions' | 'defi' | 'governance' | 'minter';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -34,7 +34,6 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'defi', icon: '⚡', label: 'DeFi' },
   { id: 'governance', icon: '🏛️', label: 'Governance' },
   { id: 'minter', icon: '🧬', label: 'Char Minter' },
-  { id: 'build', icon: '🔧', label: 'AI Builder' },
 ];
 
 // Generate deterministic star positions with more variety
