@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import anime from 'animejs';
+import { animate, stagger } from 'animejs';
 import type { Agent, AgentClass, AgentType } from '../types';
 
 /**
@@ -52,12 +52,11 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, onClick
   useEffect(() => {
     if (statsRef.current) {
       const bars = statsRef.current.querySelectorAll('.stat-bar-fill');
-      anime({
-        targets: bars,
-        width: (el: Element) => el.getAttribute('data-width') || '0%',
+      animate(bars, {
+        width: ((el: HTMLElement) => el.getAttribute('data-width') || '0%') as unknown as number,
         duration: 800,
-        delay: anime.stagger(100, { start: 200 }),
-        easing: 'easeOutCubic',
+        delay: stagger(100, { start: 200 }),
+        ease: 'outCubic',
       });
     }
   }, []);
@@ -66,24 +65,21 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, onClick
   useEffect(() => {
     if (cardRef.current) {
       if (isSelected) {
-        anime({
-          targets: cardRef.current,
+        animate(cardRef.current, {
           scale: [1, 1.02],
           duration: 200,
-          easing: 'easeOutCubic',
+          ease: 'outCubic',
         });
-        anime({
-          targets: cornersRef.current,
+        animate(cornersRef.current, {
           borderColor: ['rgba(34, 211, 238, 0.5)', 'rgba(34, 211, 238, 1)'],
           duration: 300,
-          easing: 'easeOutCubic',
+          ease: 'outCubic',
         });
       } else {
-        anime({
-          targets: cardRef.current,
+        animate(cardRef.current, {
           scale: 1,
           duration: 200,
-          easing: 'easeOutCubic',
+          ease: 'outCubic',
         });
       }
     }
@@ -91,33 +87,30 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, onClick
 
   const handleMouseEnter = () => {
     if (cardRef.current && !isSelected) {
-      anime({
-        targets: cardRef.current,
+      animate(cardRef.current, {
         translateY: -4,
         duration: 200,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
       });
     }
   };
 
   const handleMouseLeave = () => {
     if (cardRef.current && !isSelected) {
-      anime({
-        targets: cardRef.current,
+      animate(cardRef.current, {
         translateY: 0,
         duration: 200,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
       });
     }
   };
 
   const handleClick = () => {
     if (cardRef.current) {
-      anime({
-        targets: cardRef.current,
+      animate(cardRef.current, {
         scale: [1, 0.98, 1.02],
         duration: 200,
-        easing: 'easeInOutQuad',
+        ease: 'inOutQuad',
       });
     }
     onClick?.();

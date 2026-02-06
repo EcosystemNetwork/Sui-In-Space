@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import anime from 'animejs';
+import { animate, stagger } from 'animejs';
 
 /**
  * Space Base Map View Component
@@ -42,21 +42,19 @@ export const SpaceBaseMapView: React.FC = () => {
   // Initial animations
   useEffect(() => {
     if (containerRef.current) {
-      anime({
-        targets: containerRef.current,
+      animate(containerRef.current, {
         opacity: [0, 1],
         duration: 600,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
       });
 
       const sidebarItems = containerRef.current.querySelectorAll('.sidebar-item');
-      anime({
-        targets: sidebarItems,
+      animate(sidebarItems, {
         opacity: [0, 1],
         translateX: [-20, 0],
         duration: 400,
-        delay: anime.stagger(80, { start: 300 }),
-        easing: 'easeOutCubic',
+        delay: stagger(80, { start: 300 }),
+        ease: 'outCubic',
       });
     }
   }, []);

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import anime from 'animejs';
+import { animate, stagger } from 'animejs';
 import { ShipCard } from '../ShipCard';
 import type { Ship } from '../../types';
 import { ShipClass } from '../../types';
@@ -98,36 +98,33 @@ export const HangarView: React.FC = () => {
   // Initial entrance animations
   useEffect(() => {
     if (headerRef.current) {
-      anime({
-        targets: headerRef.current,
+      animate(headerRef.current, {
         translateY: [-20, 0],
         opacity: [0, 1],
         duration: 600,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
       });
     }
 
     if (statsRef.current) {
       const statCards = statsRef.current.querySelectorAll('.stat-card');
-      anime({
-        targets: statCards,
+      animate(statCards, {
         translateY: [20, 0],
         opacity: [0, 1],
         duration: 500,
-        delay: anime.stagger(80, { start: 200 }),
-        easing: 'easeOutCubic',
+        delay: stagger(80, { start: 200 }),
+        ease: 'outCubic',
       });
     }
 
     if (gridRef.current) {
       const cards = gridRef.current.querySelectorAll('.ship-card-wrapper');
-      anime({
-        targets: cards,
+      animate(cards, {
         translateY: [30, 0],
         opacity: [0, 1],
         duration: 600,
-        delay: anime.stagger(100, { start: 400 }),
-        easing: 'easeOutCubic',
+        delay: stagger(100, { start: 400 }),
+        ease: 'outCubic',
       });
     }
   }, [viewMode]);
@@ -135,12 +132,11 @@ export const HangarView: React.FC = () => {
   // Animate actions panel when ship is selected
   useEffect(() => {
     if (actionsRef.current && selectedShip) {
-      anime({
-        targets: actionsRef.current,
+      animate(actionsRef.current, {
         translateY: [20, 0],
         opacity: [0, 1],
         duration: 400,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
       });
     }
   }, [selectedShip]);

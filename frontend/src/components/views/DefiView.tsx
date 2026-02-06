@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import anime from 'animejs';
+import { animate, stagger } from 'animejs';
 import { StationType } from '../../types';
 import { useMockActions } from '../../hooks/useMockActions';
 
@@ -136,24 +136,22 @@ export const DefiView: React.FC = () => {
   // Initial entrance animations
   useEffect(() => {
     if (headerRef.current) {
-      anime({
-        targets: headerRef.current,
+      animate(headerRef.current, {
         translateY: [-20, 0],
         opacity: [0, 1],
         duration: 600,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
       });
     }
 
     if (statsRef.current) {
       const statCards = statsRef.current.querySelectorAll('.stat-card');
-      anime({
-        targets: statCards,
+      animate(statCards, {
         translateY: [20, 0],
         opacity: [0, 1],
         duration: 500,
-        delay: anime.stagger(80, { start: 200 }),
-        easing: 'easeOutCubic',
+        delay: stagger(80, { start: 200 }),
+        ease: 'outCubic',
       });
     }
   }, []);
@@ -161,22 +159,20 @@ export const DefiView: React.FC = () => {
   // Animate content when tab changes
   useEffect(() => {
     if (contentRef.current) {
-      anime({
-        targets: contentRef.current,
+      animate(contentRef.current, {
         translateY: [30, 0],
         opacity: [0, 1],
         duration: 500,
-        easing: 'easeOutCubic',
+        ease: 'outCubic',
       });
 
       const items = contentRef.current.querySelectorAll('.animated-item');
-      anime({
-        targets: items,
+      animate(items, {
         translateY: [20, 0],
         opacity: [0, 1],
         duration: 400,
-        delay: anime.stagger(80, { start: 200 }),
-        easing: 'easeOutCubic',
+        delay: stagger(80, { start: 200 }),
+        ease: 'outCubic',
       });
     }
   }, [activeTab]);
