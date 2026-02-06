@@ -51,6 +51,7 @@ export const SpaceBaseMapView: React.FC = () => {
   const [activeSidebarItem, setActiveSidebarItem] = useState<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   // Initial animations
   useEffect(() => {
@@ -74,6 +75,13 @@ export const SpaceBaseMapView: React.FC = () => {
     }
   }, []);
 
+  // Slow down video to 20% speed (500% slower)
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.playbackRate = 0.2;
+    }
+  }, []);
+
   return (
     <div className="relative w-full h-[calc(100vh-120px)] min-h-[600px] bg-slate-500 p-2 rounded-lg">
       {/* Gray Ornate Frame Border */}
@@ -92,6 +100,7 @@ export const SpaceBaseMapView: React.FC = () => {
       >
         {/* Video Background - Fill entire space and loop */}
         <video
+          ref={videoRef}
           autoPlay
           loop
           muted
