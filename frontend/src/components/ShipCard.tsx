@@ -38,12 +38,12 @@ export const ShipCard: React.FC<ShipCardProps> = ({ ship, isSelected, onClick })
   const healthPercentage = (ship.currentHealth / ship.maxHealth) * 100;
   const fuelPercentage = (ship.fuel / ship.maxFuel) * 100;
   const combatRating = Math.floor((ship.maxHealth / 10) + (ship.firepower * 2) + (ship.speed / 5));
-  
+
   const cardRef = useRef<HTMLDivElement>(null);
   const healthBarRef = useRef<HTMLDivElement>(null);
   const fuelBarRef = useRef<HTMLDivElement>(null);
   const cornersRef = useRef<HTMLDivElement[]>([]);
-  
+
   // Animate progress bars on mount
   useEffect(() => {
     if (healthBarRef.current) {
@@ -65,7 +65,7 @@ export const ShipCard: React.FC<ShipCardProps> = ({ ship, isSelected, onClick })
       });
     }
   }, [healthPercentage, fuelPercentage]);
-  
+
   // Animate selection state
   useEffect(() => {
     if (cardRef.current) {
@@ -93,7 +93,7 @@ export const ShipCard: React.FC<ShipCardProps> = ({ ship, isSelected, onClick })
       }
     }
   }, [isSelected]);
-  
+
   const handleMouseEnter = () => {
     if (cardRef.current && !isSelected) {
       anime({
@@ -104,7 +104,7 @@ export const ShipCard: React.FC<ShipCardProps> = ({ ship, isSelected, onClick })
       });
     }
   };
-  
+
   const handleMouseLeave = () => {
     if (cardRef.current && !isSelected) {
       anime({
@@ -115,7 +115,7 @@ export const ShipCard: React.FC<ShipCardProps> = ({ ship, isSelected, onClick })
       });
     }
   };
-  
+
   const handleClick = () => {
     if (cardRef.current) {
       anime({
@@ -132,11 +132,11 @@ export const ShipCard: React.FC<ShipCardProps> = ({ ship, isSelected, onClick })
     <div
       ref={cardRef}
       className={`
-        relative p-4 rounded-lg border cursor-pointer
-        bg-gradient-to-br from-slate-900/90 to-slate-800/90
-        ${isSelected 
-          ? 'border-blue-400 shadow-lg shadow-blue-400/20' 
-          : 'border-slate-700 hover:border-blue-400/50'
+        relative p-4 rounded-lg border cursor-pointer holographic-shimmer card-3d
+        bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-sm
+        ${isSelected
+          ? 'border-blue-400 neon-glow-purple'
+          : 'border-slate-700/50 hover:border-blue-400/50'
         }
       `}
       onClick={handleClick}
@@ -152,14 +152,14 @@ export const ShipCard: React.FC<ShipCardProps> = ({ ship, isSelected, onClick })
       {/* Header */}
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-2xl">{CLASS_ICONS[ship.shipClass]}</span>
+          <span className="text-2xl animate-float-slow">{CLASS_ICONS[ship.shipClass]}</span>
           <div>
-            <h3 className="text-lg font-bold text-white">{ship.name}</h3>
-            <p className="text-sm text-blue-400">{CLASS_NAMES[ship.shipClass]}</p>
+            <h3 className="text-lg font-bold text-white glitch-text">{ship.name}</h3>
+            <p className="text-sm text-blue-400 text-glow-subtle">{CLASS_NAMES[ship.shipClass]}</p>
           </div>
         </div>
         <div className="text-right">
-          <div className="text-lg font-bold text-orange-400">
+          <div className="text-lg font-bold text-orange-400 text-glow-subtle counter-value">
             ⚔️ {combatRating}
           </div>
           <div className="text-xs text-slate-400">Combat Rating</div>
@@ -171,16 +171,15 @@ export const ShipCard: React.FC<ShipCardProps> = ({ ship, isSelected, onClick })
         <div>
           <div className="flex justify-between text-xs mb-1">
             <span className="text-slate-400">Hull Integrity</span>
-            <span className={healthPercentage < 30 ? 'text-red-400' : 'text-green-400'}>
+            <span className={`counter-value ${healthPercentage < 30 ? 'text-red-400' : 'text-green-400'}`}>
               {ship.currentHealth}/{ship.maxHealth}
             </span>
           </div>
-          <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
-            <div 
+          <div className="h-2 bg-slate-700/60 rounded-full overflow-hidden">
+            <div
               ref={healthBarRef}
-              className={`h-full rounded-full ${
-                healthPercentage < 30 ? 'bg-red-500' : healthPercentage < 60 ? 'bg-yellow-500' : 'bg-green-500'
-              }`}
+              className={`h-full rounded-full progress-animated ${healthPercentage < 30 ? 'bg-red-500' : healthPercentage < 60 ? 'bg-yellow-500' : 'bg-green-500'
+                }`}
               style={{ width: '0%' }}
             />
           </div>
@@ -189,16 +188,15 @@ export const ShipCard: React.FC<ShipCardProps> = ({ ship, isSelected, onClick })
         <div>
           <div className="flex justify-between text-xs mb-1">
             <span className="text-slate-400">Fuel</span>
-            <span className={fuelPercentage < 20 ? 'text-red-400' : 'text-cyan-400'}>
+            <span className={`counter-value ${fuelPercentage < 20 ? 'text-red-400' : 'text-cyan-400'}`}>
               {ship.fuel}/{ship.maxFuel}
             </span>
           </div>
-          <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
-            <div 
+          <div className="h-2 bg-slate-700/60 rounded-full overflow-hidden">
+            <div
               ref={fuelBarRef}
-              className={`h-full rounded-full ${
-                fuelPercentage < 20 ? 'bg-red-500' : 'bg-cyan-500'
-              }`}
+              className={`h-full rounded-full progress-animated ${fuelPercentage < 20 ? 'bg-red-500' : 'bg-cyan-500'
+                }`}
               style={{ width: '0%' }}
             />
           </div>
@@ -226,7 +224,7 @@ export const ShipCard: React.FC<ShipCardProps> = ({ ship, isSelected, onClick })
       </div>
 
       {/* Module Slots */}
-      <div className="border-t border-slate-700 pt-2 mb-2">
+      <div className="border-t border-cyan-500/20 pt-2 mb-2">
         <div className="text-xs text-slate-400 mb-1">Modules</div>
         <div className="flex gap-1">
           <ModuleSlot label="H" filled={!!ship.modules.hull} />
@@ -238,7 +236,7 @@ export const ShipCard: React.FC<ShipCardProps> = ({ ship, isSelected, onClick })
       </div>
 
       {/* Crew & Status */}
-      <div className="flex justify-between items-center pt-2 border-t border-slate-700">
+      <div className="flex justify-between items-center pt-2 border-t border-cyan-500/20">
         <div className="text-xs">
           <span className="text-slate-400">Crew: </span>
           <span className="text-white">{ship.crew.length}/{ship.maxCrew}</span>
@@ -272,11 +270,11 @@ interface ModuleSlotProps {
 }
 
 const ModuleSlot: React.FC<ModuleSlotProps> = ({ label, filled }) => (
-  <div 
+  <div
     className={`
       w-8 h-8 flex items-center justify-center rounded text-xs font-bold
-      ${filled 
-        ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50' 
+      ${filled
+        ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
         : 'bg-slate-700/50 text-slate-500 border border-slate-600'
       }
     `}
