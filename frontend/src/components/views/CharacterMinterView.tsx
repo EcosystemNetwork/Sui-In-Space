@@ -35,6 +35,7 @@ interface ArmorTier {
   id: string;
   name: string;
   color: string;
+  textColor: string;
   description: string;
 }
 
@@ -50,6 +51,8 @@ interface CharacterStats {
 }
 
 type MintPhase = 'configure' | 'minting' | 'complete';
+
+const GENE_SEQUENCE_LENGTH = 32;
 
 const ARCHETYPES: Archetype[] = [
   { id: 'void-paladin', name: 'Void Paladin', icon: '🛡️', description: 'Holy warrior in powered exoskeleton, wielding faith and ceramite', statBias: { strength: 15, faith: 20 } },
@@ -76,10 +79,10 @@ const WEAPONS: WeaponOption[] = [
 ];
 
 const ARMOR_TIERS: ArmorTier[] = [
-  { id: 'relic', name: 'Relic', color: 'text-yellow-400 border-yellow-500/50 bg-yellow-500/10', description: 'Ancient and holy' },
-  { id: 'sanctified', name: 'Sanctified', color: 'text-blue-400 border-blue-500/50 bg-blue-500/10', description: 'Blessed by clerics' },
-  { id: 'corrupted', name: 'Corrupted', color: 'text-purple-400 border-purple-500/50 bg-purple-500/10', description: 'Tainted by the warp' },
-  { id: 'heretical', name: 'Heretical', color: 'text-red-400 border-red-500/50 bg-red-500/10', description: 'Forbidden power' },
+  { id: 'relic', name: 'Relic', color: 'text-yellow-400 border-yellow-500/50 bg-yellow-500/10', textColor: 'text-yellow-400', description: 'Ancient and holy' },
+  { id: 'sanctified', name: 'Sanctified', color: 'text-blue-400 border-blue-500/50 bg-blue-500/10', textColor: 'text-blue-400', description: 'Blessed by clerics' },
+  { id: 'corrupted', name: 'Corrupted', color: 'text-purple-400 border-purple-500/50 bg-purple-500/10', textColor: 'text-purple-400', description: 'Tainted by the warp' },
+  { id: 'heretical', name: 'Heretical', color: 'text-red-400 border-red-500/50 bg-red-500/10', textColor: 'text-red-400', description: 'Forbidden power' },
 ];
 
 const STAT_CONFIG: { key: StatKey; label: string; icon: string; color: string }[] = [
@@ -419,7 +422,7 @@ export const CharacterMinterView: React.FC = () => {
                 <span className="text-purple-400">🧬</span> Gene-Sequence
               </h4>
               <p className="text-xs text-slate-500 font-mono break-all">
-                {`0x${Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`}
+                {`0x${Array.from({ length: GENE_SEQUENCE_LENGTH }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`}
               </p>
             </div>
 
@@ -561,7 +564,7 @@ export const CharacterMinterView: React.FC = () => {
                           : 'bg-slate-800/50 border-slate-700 hover:bg-slate-800'
                       }`}
                     >
-                      <span className={`text-sm font-bold ${tier.color.split(' ')[0]}`}>{tier.name}</span>
+                      <span className={`text-sm font-bold ${tier.textColor}`}>{tier.name}</span>
                       <span className="text-xs text-slate-500">{tier.description}</span>
                     </button>
                   ))}
@@ -642,7 +645,7 @@ export const CharacterMinterView: React.FC = () => {
                       <h4 className="text-lg font-bold text-white">{selectedArchetype.name}</h4>
                       {selectedRace && <p className="text-xs text-slate-400">{selectedRace.icon} {selectedRace.name}</p>}
                       {selectedWeapon && <p className="text-xs text-red-400 mt-1">{selectedWeapon.icon} {selectedWeapon.name}</p>}
-                      {selectedArmor && <p className={`text-xs mt-1 ${selectedArmor.color.split(' ')[0]}`}>{selectedArmor.name} Armor</p>}
+                      {selectedArmor && <p className={`text-xs mt-1 ${selectedArmor.textColor}`}>{selectedArmor.name} Armor</p>}
                     </>
                   ) : (
                     <div className="py-8">
