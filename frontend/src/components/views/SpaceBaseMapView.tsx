@@ -26,12 +26,6 @@ interface Location {
 
 // ============ Constants ============
 
-const SIDEBAR_ITEMS: SidebarItem[] = [
-  { id: 'inventory', name: 'Inventory', icon: '📦', label: 'Inventory' },
-  { id: 'starships', name: 'Heroes', icon: '🚀', label: 'Starships' },
-  { id: 'modules', name: 'Equipment', icon: '⚙️', label: 'Modules' },
-  { id: 'quantum', name: 'Synthesizer', icon: '💎', label: 'Quantum Cores' },
-];
 
 // Clickable regions overlaid on the background (approximate positions matching the image)
 const LOCATIONS: Location[] = [
@@ -48,7 +42,6 @@ const LOCATIONS: Location[] = [
 export const SpaceBaseMapView: React.FC = () => {
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [hoveredLocation, setHoveredLocation] = useState<Location | null>(null);
-  const [activeSidebarItem, setActiveSidebarItem] = useState<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -130,38 +123,7 @@ export const SpaceBaseMapView: React.FC = () => {
           />
         ))}
 
-        {/* Left Sidebar - Overlaid on top */}
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-30">
-          {/* Planet/Globe Icon */}
-          <div className="sidebar-item relative mb-2" style={{ opacity: 0 }}>
-            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 border-2 border-slate-500 shadow-lg overflow-hidden flex items-center justify-center">
-              <span className="text-xl">🌍</span>
-            </div>
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-cyan-500 border border-slate-800 flex items-center justify-center">
-              <span className="text-[8px] text-white font-bold">+</span>
-            </div>
-          </div>
 
-          {/* Menu Items */}
-          {SIDEBAR_ITEMS.map(item => (
-            <button
-              key={item.id}
-              onClick={() => setActiveSidebarItem(activeSidebarItem === item.id ? null : item.id)}
-              className={`sidebar-item transition-all duration-200 hover:scale-105`}
-              style={{ opacity: 0 }}
-            >
-              <div className={`flex items-center gap-2 px-2 py-1.5 rounded-lg bg-gradient-to-r from-slate-700/95 to-slate-800/95 border ${activeSidebarItem === item.id ? 'border-cyan-400' : 'border-slate-600/80'
-                } shadow-lg backdrop-blur-sm`}>
-                <div className="w-7 h-7 rounded bg-slate-900/80 flex items-center justify-center border border-slate-600/50">
-                  <span className="text-sm">{item.icon}</span>
-                </div>
-                <span className="text-[11px] text-slate-200 font-medium pr-1">{item.label}</span>
-              </div>
-              {/* Small label below */}
-              <div className="text-[8px] text-cyan-400 font-bold mt-0.5 ml-1">{item.name}</div>
-            </button>
-          ))}
-        </div>
 
         {/* Right Side Controls */}
         <div className="absolute right-3 top-4 flex flex-col gap-2 z-30">
