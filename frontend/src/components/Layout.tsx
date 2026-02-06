@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect, useRef } from 'react';
-import { animate, stagger } from 'animejs';
+import { animate, stagger, type FunctionValue } from 'animejs';
 import { ConnectButton, useCurrentAccount } from '@mysten/dapp-kit';
 
 /**
@@ -121,15 +121,10 @@ export const Layout: React.FC<LayoutProps> = ({
     if (starsContainerRef.current) {
       const starElements = starsContainerRef.current.querySelectorAll('.star');
       animate(starElements, {
-        opacity: ((_el: HTMLElement, i: number) => [
-          { value: 0.2, duration: 0 },
-          { value: stars[i % stars.length].opacity, duration: 1000 + (i % 5) * 500 },
-        ]) as unknown as number,
-        scale: [
-          { value: 0.5, duration: 0 },
-          { value: 1, duration: 800 },
-        ],
+        opacity: ((_el, i) => stars[i % stars.length].opacity) as FunctionValue,
+        scale: [0.5, 1],
         delay: stagger(20),
+        duration: ((_el, i) => 1000 + (i % 5) * 500) as FunctionValue,
         ease: 'outCubic',
       });
     }
