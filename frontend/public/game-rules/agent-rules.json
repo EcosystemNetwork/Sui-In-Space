@@ -1,0 +1,16 @@
+{
+  "statFormulas": {
+    "combatPower": { "power": 3, "mobility": 2, "resilience": 2, "processing": 1, "divisor": 8 },
+    "yieldBonus": { "processingDivisor": 10 }
+  },
+  "classBonuses": {
+    "Hacker": { "processing": 5, "luck": 3 },
+    "Pilot": { "mobility": 5, "resilience": 3 },
+    "MechOperator": { "power": 5, "resilience": 3 },
+    "QuantumEngineer": { "processing": 3, "neuralBandwidth": 5 },
+    "Psionic": { "neuralBandwidth": 5, "luck": 3 },
+    "BountyAI": { "power": 3, "mobility": 3, "processing": 3 }
+  },
+  "leveling": { "xpPerLevel": 1000, "maxLevel": 100 },
+  "augmentSlotUnlocks": [1, 10, 25, 50, 75, 100]
+}

@@ -3,7 +3,7 @@ import { animate, stagger } from 'animejs';
 import { AgentCard } from '../AgentCard';
 import type { Agent } from '../../types';
 import { AgentType, AgentClass } from '../../types';
-import { useMockActions } from '../../hooks/useMockActions';
+import { useGameActions } from '../../hooks/useGameActions';
 
 /**
  * Agents View Component
@@ -104,7 +104,7 @@ export const AgentsView: React.FC = () => {
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [viewMode, setViewMode] = useState<'roster' | 'recruit'>('roster');
   const [filterClass, setFilterClass] = useState<AgentClass | null>(null);
-  const { mintAgent, trainAgent, stakeAgent, unstakeAgent, startMission } = useMockActions();
+  const { mintAgent, trainAgent, stakeAgent, unstakeAgent, startMission } = useGameActions();
 
   const filteredAgents = filterClass !== null
     ? DEMO_AGENTS.filter(a => a.class === filterClass)

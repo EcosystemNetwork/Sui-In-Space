@@ -1,0 +1,29 @@
+{
+  "areas": [
+    {
+      "id": "sector-alpha",
+      "name": "Sector Alpha",
+      "type": "safe",
+      "coordinates": { "x": 0, "y": 0, "z": 0 },
+      "resources": ["Energy", "Metal"],
+      "npcs": [{ "name": "Dock Master Vex", "role": "trader" }]
+    },
+    {
+      "id": "nebula-prime",
+      "name": "Nebula Prime",
+      "type": "contested",
+      "coordinates": { "x": 120, "y": 80, "z": 5 },
+      "resources": ["Quantum", "DarkMatter"],
+      "npcs": [{ "name": "Corsair Nyx", "role": "smuggler" }]
+    },
+    {
+      "id": "outer-rim",
+      "name": "Outer Rim",
+      "type": "hostile",
+      "coordinates": { "x": -200, "y": 150, "z": -30 },
+      "resources": ["Relics", "Psionic"],
+      "npcs": []
+    }
+  ],
+  "events": []
+}

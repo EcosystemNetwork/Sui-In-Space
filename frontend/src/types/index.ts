@@ -500,3 +500,97 @@ export interface UIState {
   selectedStation: ObjectId | null;
   activeTab: 'base' | 'map' | 'hangar' | 'agents' | 'missions' | 'defi' | 'governance' | 'minter';
 }
+
+// ============ Build System Types ============
+
+export interface BuildSuggestion {
+  id: string;
+  type: 'mint_agent' | 'build_ship' | 'build_station';
+  params: Record<string, unknown>;
+  description: string;
+  suggestedBy: string;
+  timestamp: number;
+  status: 'pending' | 'accepted' | 'dismissed';
+  txDigest?: string;
+}
+
+// ============ Game Rules Types ============
+
+export interface AgentRules {
+  statFormulas: {
+    combatPower: { power: number; mobility: number; resilience: number; processing: number; divisor: number };
+    yieldBonus: { processingDivisor: number };
+  };
+  classBonuses: Record<string, Record<string, number>>;
+  leveling: { xpPerLevel: number; maxLevel: number };
+  augmentSlotUnlocks: number[];
+}
+
+export interface MissionRuleTemplate {
+  id: string;
+  name: string;
+  type: string;
+  difficulty: number;
+  requirements: { minLevel: number; minProcessing: number };
+  rewards: { xp: number; galactic: number; lootChance: number };
+  duration: number;
+}
+
+export interface MissionRules {
+  successFormula: {
+    base: number;
+    levelBonusCap: number;
+    statBonusCap: number;
+    difficultyPenalty: number;
+    maxSuccess: number;
+  };
+  templates: MissionRuleTemplate[];
+}
+
+export interface WorldArea {
+  id: string;
+  name: string;
+  type: string;
+  coordinates: { x: number; y: number; z: number };
+  resources: string[];
+  npcs: { name: string; role: string }[];
+}
+
+export interface WorldRules {
+  areas: WorldArea[];
+  events: unknown[];
+}
+
+export interface DefiRules {
+  swapFee: number;
+  yieldRates: Record<string, number>;
+  lockBonuses: Record<string, number>;
+  insurancePremium: number;
+  insurancePayout: number;
+}
+
+export interface GameRules {
+  agent: AgentRules;
+  mission: MissionRules;
+  world: WorldRules;
+  defi: DefiRules;
+}
+
+// ============ Code Verification Types ============
+
+export interface CodeVerificationState {
+  isVerified: boolean;
+  isLoading: boolean;
+  localRoot: string | null;
+  onChainRoot: string | null;
+  version: number;
+  mismatch: boolean;
+  error: string | null;
+}
+
+export interface RulesManifest {
+  root: string;
+  version: number;
+  files: Record<string, string>;
+  timestamp: number;
+}

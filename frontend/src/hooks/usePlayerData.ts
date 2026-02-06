@@ -4,19 +4,19 @@
  */
 
 import { useEffect, useCallback } from 'react';
-import { useCurrentAccount } from '@mysten/dapp-kit';
+import { useAuth } from './useAuth';
 import { useGameStore } from './useGameStore';
 import { loadFullPlayerData, logActivity } from '../lib/database';
 import { isSupabaseConfigured } from '../lib/supabase';
 import type { Agent, Ship, Station, ActiveMission } from '../types';
 
 export function usePlayerData() {
-    const currentAccount = useCurrentAccount();
+    const auth = useAuth();
     const { setPlayer, setLoading, setError } = useGameStore();
 
     // Load player data when wallet connects
     const loadPlayerData = useCallback(async () => {
-        if (!currentAccount?.address) {
+        if (!auth.address) {
             setPlayer(null);
             return;
         }
@@ -25,7 +25,7 @@ export function usePlayerData() {
             console.log('Supabase not configured, using local state only');
             // Set a basic player state without persistence
             setPlayer({
-                address: currentAccount.address,
+                address: auth.address!,
                 galacticBalance: 0n,
                 suiBalance: 0n,
                 agents: [],
@@ -43,7 +43,7 @@ export function usePlayerData() {
         setError(null);
 
         try {
-            const data = await loadFullPlayerData(currentAccount.address);
+            const data = await loadFullPlayerData(auth.address!);
 
             if (data) {
                 // Convert database format to game store format
@@ -111,7 +111,7 @@ export function usePlayerData() {
                     level: st.level,
                     experience: 0,
                     efficiency: 1,
-                    owner: currentAccount.address,
+                    owner: auth.address!,
                     factionId: null,
                     isActive: st.is_active,
                     underMaintenance: false,
@@ -122,7 +122,7 @@ export function usePlayerData() {
                     .map((m) => ({
                         id: m.id,
                         templateId: m.template_id,
-                        player: currentAccount.address,
+                        player: auth.address!,
                         agentId: m.agent_id,
                         shipId: m.ship_id,
                         startedAt: new Date(m.started_at).getTime(),
@@ -131,7 +131,7 @@ export function usePlayerData() {
                     }));
 
                 setPlayer({
-                    address: currentAccount.address,
+                    address: auth.address!,
                     galacticBalance: BigInt(data.player.galactic_balance),
                     suiBalance: BigInt(data.player.sui_balance),
                     agents,
@@ -148,7 +148,7 @@ export function usePlayerData() {
                     player_id: data.player.id,
                     event_type: 'login',
                     description: 'Player connected wallet',
-                    metadata: { wallet: currentAccount.address },
+                    metadata: { wallet: auth.address! },
                 });
             }
         } catch (error) {
@@ -157,7 +157,7 @@ export function usePlayerData() {
         } finally {
             setLoading(false);
         }
-    }, [currentAccount?.address, setPlayer, setLoading, setError]);
+    }, [auth.address, auth.isConnected, setPlayer, setLoading, setError]);
 
     // Load data when wallet connects
     useEffect(() => {
@@ -165,8 +165,8 @@ export function usePlayerData() {
     }, [loadPlayerData]);
 
     return {
-        isConnected: !!currentAccount,
-        address: currentAccount?.address || null,
+        isConnected: auth.isConnected,
+        address: auth.address || null,
         reload: loadPlayerData,
     };
 }
