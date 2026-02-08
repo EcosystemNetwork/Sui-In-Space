@@ -1,7 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { animate, stagger } from 'animejs';
 import { StationType } from '../../types';
-import { useMockActions } from '../../hooks/useMockActions';
+import { useGameActions } from '../../hooks/useGameActions';
+import { useLiveData } from '../../hooks/useLiveData';
+import { stationInfoToDemo } from '../../utils/liveDataAdapters';
 
 /**
  * DeFi View Component
@@ -123,11 +125,78 @@ const STATION_NAMES: Record<StationType, string> = {
 export const DefiView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'stations' | 'pools' | 'swap'>('stations');
   const [selectedStation, setSelectedStation] = useState<DemoStation | null>(null);
-  const { stake, unstake, claimYield, addLiquidity, removeLiquidity, swap } = useMockActions();
+  const { stake, unstake, claimYield, addLiquidity, removeLiquidity, swap } = useGameActions();
+  const { allStations, world, configured } = useLiveData();
 
-  const totalStakedByPlayer = DEMO_STATIONS.reduce((sum, s) => sum + s.playerStake, 0);
-  const totalPendingRewards = DEMO_STATIONS.reduce((sum, s) => sum + s.pendingRewards, 0);
-  const totalLPValue = DEMO_POOLS.reduce((sum, p) => sum + p.playerLP, 0);
+  const liveStations = useMemo<DemoStation[] | null>(() => {
+    if (!configured || allStations.length === 0) return null;
+    return allStations.map(s => {
+      const adapted = stationInfoToDemo(s);
+      return {
+        id: adapted.id,
+        name: adapted.name,
+        type: adapted.type as unknown as StationType,
+        level: adapted.level,
+        totalStaked: 0,
+        apy: 0,
+        operators: 0,
+        maxOperators: 0,
+        efficiency: 0,
+        playerStake: 0,
+        pendingRewards: 0,
+      } as DemoStation;
+    });
+  }, [configured, allStations]);
+
+  const livePools = useMemo<DemoPool[] | null>(() => {
+    if (!configured) return null;
+    const pools: DemoPool[] = [];
+    if (world.reactor) {
+      const r = world.reactor;
+      const tvl = (r.galactic_reserve + r.sui_reserve) / 1e9;
+      pools.push({
+        id: r.id,
+        name: 'GALACTIC-SUI',
+        token1: 'GALACTIC',
+        token2: 'SUI',
+        tvl: tvl,
+        apy: 0,
+        volume24h: (r.total_volume_galactic + r.total_volume_sui) / 1e9,
+        fees24h: 0,
+        playerLP: 0,
+      });
+    }
+    if (world.insurancePool) {
+      const ip = world.insurancePool;
+      pools.push({
+        id: ip.id,
+        name: 'Insurance Pool',
+        token1: 'GALACTIC',
+        token2: 'INSURANCE',
+        tvl: ip.reserve / 1e9,
+        apy: 0,
+        volume24h: ip.total_premiums / 1e9,
+        fees24h: 0,
+        playerLP: 0,
+      });
+    }
+    return pools.length > 0 ? pools : null;
+  }, [configured, world.reactor, world.insurancePool]);
+
+  const stations = liveStations ?? DEMO_STATIONS;
+  const pools = livePools ?? DEMO_POOLS;
+
+  const totalStakedByPlayer = stations.reduce((sum, s) => sum + s.playerStake, 0);
+  const totalPendingRewards = stations.reduce((sum, s) => sum + s.pendingRewards, 0);
+  const totalLPValue = pools.reduce((sum, p) => sum + p.playerLP, 0);
+
+  const protocolTVL = useMemo(() => {
+    if (!configured || !world.reactor) return '$12.4M';
+    const reactorTVL = (world.reactor.galactic_reserve + world.reactor.sui_reserve) / 1e9;
+    const insuranceTVL = world.insurancePool ? world.insurancePool.reserve / 1e9 : 0;
+    const total = reactorTVL + insuranceTVL;
+    return total >= 1e6 ? `$${(total / 1e6).toFixed(1)}M` : `$${total.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+  }, [configured, world.reactor, world.insurancePool]);
 
   const headerRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
@@ -216,7 +285,7 @@ export const DefiView: React.FC = () => {
           <div className="text-xs text-slate-400">LP Position Value</div>
         </div>
         <div className="stat-card p-3 rounded-lg bg-orange-500/10 border border-orange-500/30" style={{ opacity: 0 }}>
-          <div className="text-2xl font-bold text-orange-400">$12.4M</div>
+          <div className="text-2xl font-bold text-orange-400">{protocolTVL}</div>
           <div className="text-xs text-slate-400">Protocol TVL</div>
         </div>
       </div>
@@ -234,7 +303,7 @@ export const DefiView: React.FC = () => {
         <div ref={contentRef} style={{ opacity: 0 }}>
           {/* Stations Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {DEMO_STATIONS.map((station) => (
+            {stations.map((station) => (
               <div
                 key={station.id}
                 onClick={() => setSelectedStation(selectedStation?.id === station.id ? null : station)}
@@ -320,7 +389,7 @@ export const DefiView: React.FC = () => {
             </h3>
 
             <div className="space-y-3">
-              {DEMO_POOLS.map((pool) => (
+              {pools.map((pool) => (
                 <div
                   key={pool.id}
                   className="p-4 rounded-lg bg-slate-800/50 border border-slate-700 hover:border-slate-600 transition-all"
@@ -433,7 +502,9 @@ export const DefiView: React.FC = () => {
               <div className="mt-4 p-3 rounded bg-slate-800/30 text-xs">
                 <div className="flex justify-between text-slate-400 mb-1">
                   <span>Exchange Rate</span>
-                  <span className="text-white">1 GALACTIC = 0.00042 SUI</span>
+                  <span className="text-white">1 GALACTIC = {configured && world.reactor && world.reactor.galactic_reserve > 0
+                    ? (world.reactor.sui_reserve / world.reactor.galactic_reserve).toFixed(6)
+                    : '0.00042'} SUI</span>
                 </div>
                 <div className="flex justify-between text-slate-400 mb-1">
                   <span>Slippage Tolerance</span>
@@ -441,7 +512,7 @@ export const DefiView: React.FC = () => {
                 </div>
                 <div className="flex justify-between text-slate-400">
                   <span>Protocol Fee</span>
-                  <span className="text-white">0.3%</span>
+                  <span className="text-white">{configured && world.reactor ? `${world.reactor.total_swaps} swaps` : '0.3%'}</span>
                 </div>
               </div>
 

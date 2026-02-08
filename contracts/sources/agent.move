@@ -275,8 +275,8 @@ module sui_in_space::agent {
             agent.level == 50 || agent.level == 75 || agent.level == 100) {
             if (agent.max_augment_slots < MAX_AUGMENT_SLOTS) {
                 agent.max_augment_slots = agent.max_augment_slots + 1;
-            }
-        }
+            };
+        };
 
         event::emit(AgentLevelUp {
             agent_id: object::id(agent),

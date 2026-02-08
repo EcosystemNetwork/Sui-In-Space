@@ -1,6 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { animate, stagger } from 'animejs';
 import { ProposalType, ProposalStatus } from '../../types';
+import { useLiveData } from '../../hooks/useLiveData';
+import { proposalInfoToDemo } from '../../utils/liveDataAdapters';
 
 /**
  * Governance View Component
@@ -124,10 +126,18 @@ export const GovernanceView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'proposals' | 'create' | 'power'>('proposals');
   const [selectedProposal, setSelectedProposal] = useState<DemoProposal | null>(null);
   const [filterStatus, setFilterStatus] = useState<ProposalStatus | null>(null);
+  const { world, configured } = useLiveData();
+
+  const liveProposals = useMemo<DemoProposal[] | null>(() => {
+    if (!configured || world.proposals.length === 0) return null;
+    return world.proposals.map((p, i) => proposalInfoToDemo(p, i));
+  }, [configured, world.proposals]);
+
+  const proposals = liveProposals ?? DEMO_PROPOSALS;
 
   const filteredProposals = filterStatus !== null
-    ? DEMO_PROPOSALS.filter(p => p.status === filterStatus)
-    : DEMO_PROPOSALS;
+    ? proposals.filter(p => p.status === filterStatus)
+    : proposals;
 
   // Demo voting power
   const votingPower = {
@@ -226,22 +236,28 @@ export const GovernanceView: React.FC = () => {
       {/* Governance Stats */}
       <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="stat-card p-3 rounded-lg bg-purple-500/10 border border-purple-500/30" style={{ opacity: 0 }}>
-          <div className="text-2xl font-bold text-purple-400">{DEMO_PROPOSALS.length}</div>
+          <div className="text-2xl font-bold text-purple-400">
+            {configured && world.governance ? world.governance.total_proposals : proposals.length}
+          </div>
           <div className="text-xs text-slate-400">Total Proposals</div>
         </div>
         <div className="stat-card p-3 rounded-lg bg-green-500/10 border border-green-500/30" style={{ opacity: 0 }}>
           <div className="text-2xl font-bold text-green-400">
-            {DEMO_PROPOSALS.filter(p => p.status === ProposalStatus.Active).length}
+            {proposals.filter(p => p.status === ProposalStatus.Active).length}
           </div>
           <div className="text-xs text-slate-400">Active Voting</div>
         </div>
         <div className="stat-card p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30" style={{ opacity: 0 }}>
-          <div className="text-2xl font-bold text-cyan-400">{(votingPower.totalPower / 1000).toFixed(0)}K</div>
-          <div className="text-xs text-slate-400">Your Voting Power</div>
+          <div className="text-2xl font-bold text-cyan-400">
+            {configured && world.governance
+              ? (world.governance.treasury_balance / 1e9).toFixed(0)
+              : (votingPower.totalPower / 1000).toFixed(0) + 'K'}
+          </div>
+          <div className="text-xs text-slate-400">{configured && world.governance ? 'Treasury' : 'Your Voting Power'}</div>
         </div>
         <div className="stat-card p-3 rounded-lg bg-orange-500/10 border border-orange-500/30" style={{ opacity: 0 }}>
           <div className="text-2xl font-bold text-orange-400">
-            {DEMO_PROPOSALS.filter(p => p.status === ProposalStatus.Executed).length}
+            {configured && world.governance ? world.governance.total_executed : proposals.filter(p => p.status === ProposalStatus.Executed).length}
           </div>
           <div className="text-xs text-slate-400">Executed</div>
         </div>

@@ -1,5 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { animate, stagger } from 'animejs';
+import { useLiveData } from '../../hooks/useLiveData';
+import { planetToStarSystem } from '../../utils/liveDataAdapters';
 
 /**
  * Star Map View Component
@@ -49,6 +51,17 @@ const TYPE_ICONS = {
 export const StarMapView: React.FC = () => {
   const [selectedSystem, setSelectedSystem] = useState<StarSystem | null>(null);
   const [viewMode, setViewMode] = useState<'galaxy' | 'system'>('galaxy');
+  const { world, configured } = useLiveData();
+
+  const liveSystems = useMemo<StarSystem[] | null>(() => {
+    if (!configured || world.planets.length === 0) return null;
+    return world.planets.map((p, i) => {
+      const live = planetToStarSystem(p, i, world.planets.length);
+      return live as unknown as StarSystem;
+    });
+  }, [configured, world.planets]);
+
+  const systems = liveSystems ?? DEMO_SYSTEMS;
   
   const headerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
@@ -189,8 +202,8 @@ export const StarMapView: React.FC = () => {
 
             {/* Connection lines */}
             <svg className="absolute inset-0 w-full h-full">
-              {DEMO_SYSTEMS.slice(0, 5).map((system, index) => {
-                const nextSystem = DEMO_SYSTEMS[(index + 1) % 5];
+              {systems.slice(0, 5).map((system, index) => {
+                const nextSystem = systems[(index + 1) % Math.min(systems.length, 5)];
                 return (
                   <line
                     key={`line-${index}`}
@@ -208,7 +221,7 @@ export const StarMapView: React.FC = () => {
             </svg>
 
             {/* Star systems */}
-            {DEMO_SYSTEMS.map((system) => (
+            {systems.map((system) => (
               <button
                 key={system.id}
                 onClick={(e) => handleSystemClick(system, e)}
@@ -315,19 +328,19 @@ export const StarMapView: React.FC = () => {
       {/* Quick Stats */}
       <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="stat-card p-3 rounded-lg bg-slate-800/50 border border-slate-700" style={{ opacity: 0 }}>
-          <div className="text-2xl font-bold text-cyan-400">7</div>
+          <div className="text-2xl font-bold text-cyan-400">{systems.length}</div>
           <div className="text-xs text-slate-400">Systems Discovered</div>
         </div>
         <div className="stat-card p-3 rounded-lg bg-slate-800/50 border border-slate-700" style={{ opacity: 0 }}>
-          <div className="text-2xl font-bold text-green-400">1</div>
-          <div className="text-xs text-slate-400">Systems Owned</div>
+          <div className="text-2xl font-bold text-green-400">{systems.filter(s => s.claimed).length}</div>
+          <div className="text-xs text-slate-400">Systems Claimed</div>
         </div>
         <div className="stat-card p-3 rounded-lg bg-slate-800/50 border border-slate-700" style={{ opacity: 0 }}>
-          <div className="text-2xl font-bold text-orange-400">5</div>
-          <div className="text-xs text-slate-400">Planets Colonized</div>
+          <div className="text-2xl font-bold text-orange-400">{systems.filter(s => s.playerOwned).length}</div>
+          <div className="text-xs text-slate-400">Player Owned</div>
         </div>
         <div className="stat-card p-3 rounded-lg bg-slate-800/50 border border-slate-700" style={{ opacity: 0 }}>
-          <div className="text-2xl font-bold text-purple-400">3</div>
+          <div className="text-2xl font-bold text-purple-400">{systems.reduce((sum, s) => sum + s.stations, 0)}</div>
           <div className="text-xs text-slate-400">Active Stations</div>
         </div>
       </div>

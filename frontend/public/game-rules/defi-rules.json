@@ -1,0 +1,16 @@
+{
+  "swapFee": 30,
+  "yieldRates": {
+    "YieldFarm": 1500,
+    "ResearchLab": 1200,
+    "BlackMarket": 1700
+  },
+  "lockBonuses": {
+    "7": 0,
+    "30": 500,
+    "90": 1500,
+    "365": 3000
+  },
+  "insurancePremium": 200,
+  "insurancePayout": 5000
+}

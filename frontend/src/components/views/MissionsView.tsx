@@ -1,6 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { animate, stagger } from 'animejs';
 import { MissionType, MissionStatus } from '../../types';
+import { useLiveData } from '../../hooks/useLiveData';
+import { missionTemplateToDemo } from '../../utils/liveDataAdapters';
 
 /**
  * Missions View Component
@@ -167,10 +169,33 @@ const MISSION_CARD_SELECTED_CLASSES: Record<MissionType, string> = {
 export const MissionsView: React.FC = () => {
   const [selectedMission, setSelectedMission] = useState<DemoMission | null>(null);
   const [filterType, setFilterType] = useState<MissionType | null>(null);
+  const { world, allAgents, configured } = useLiveData();
+
+  const liveMissions = useMemo<DemoMission[] | null>(() => {
+    if (!configured || world.missionTemplates.length === 0) return null;
+    return world.missionTemplates.map(m => missionTemplateToDemo(m));
+  }, [configured, world.missionTemplates]);
+
+  const missions = liveMissions ?? AVAILABLE_MISSIONS;
+
+  const liveActiveMissions = useMemo<ActiveMission[]>(() => {
+    if (!configured) return ACTIVE_MISSIONS;
+    const onMission = allAgents.filter(a => a.on_mission);
+    return onMission.map((a, i) => ({
+      id: `live-active-${i}`,
+      missionName: 'Active Mission',
+      agentName: a.name,
+      progress: 50,
+      timeRemaining: 'In progress',
+      status: MissionStatus.Active,
+    }));
+  }, [configured, allAgents]);
+
+  const activeMissions = liveActiveMissions;
 
   const filteredMissions = filterType !== null
-    ? AVAILABLE_MISSIONS.filter(m => m.type === filterType)
-    : AVAILABLE_MISSIONS;
+    ? missions.filter(m => m.type === filterType)
+    : missions;
 
   const getDifficultyStars = (difficulty: number) => '★'.repeat(difficulty) + '☆'.repeat(5 - difficulty);
   
@@ -258,19 +283,19 @@ export const MissionsView: React.FC = () => {
           Mission Board
         </h2>
         <div className="text-sm text-slate-400">
-          <span className="text-green-400">{ACTIVE_MISSIONS.length}</span> Active Missions
+          <span className="text-green-400">{activeMissions.length}</span> Active Missions
         </div>
       </div>
 
       {/* Active Missions */}
-      {ACTIVE_MISSIONS.length > 0 && (
+      {activeMissions.length > 0 && (
         <div ref={activeMissionsRef} className="p-4 rounded-lg bg-slate-900/80 border border-green-500/30" style={{ opacity: 0 }}>
           <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
             <span className="text-green-400">▶</span>
             Active Missions
           </h3>
           <div className="space-y-3">
-            {ACTIVE_MISSIONS.map((mission) => (
+            {activeMissions.map((mission) => (
               <div
                 key={mission.id}
                 className="p-3 rounded-lg bg-slate-800/50 border border-green-500/20"
@@ -306,20 +331,22 @@ export const MissionsView: React.FC = () => {
       {/* Mission Stats */}
       <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="stat-card p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30" style={{ opacity: 0 }}>
-          <div className="text-2xl font-bold text-yellow-400">{AVAILABLE_MISSIONS.length}</div>
+          <div className="text-2xl font-bold text-yellow-400">{missions.length}</div>
           <div className="text-xs text-slate-400">Available</div>
         </div>
         <div className="stat-card p-3 rounded-lg bg-green-500/10 border border-green-500/30" style={{ opacity: 0 }}>
-          <div className="text-2xl font-bold text-green-400">{ACTIVE_MISSIONS.length}</div>
+          <div className="text-2xl font-bold text-green-400">{activeMissions.length}</div>
           <div className="text-xs text-slate-400">In Progress</div>
         </div>
         <div className="stat-card p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30" style={{ opacity: 0 }}>
-          <div className="text-2xl font-bold text-cyan-400">47</div>
-          <div className="text-xs text-slate-400">Completed</div>
+          <div className="text-2xl font-bold text-cyan-400">{missions.reduce((sum, m) => sum + m.timesCompleted, 0)}</div>
+          <div className="text-xs text-slate-400">Total Completed</div>
         </div>
         <div className="stat-card p-3 rounded-lg bg-orange-500/10 border border-orange-500/30" style={{ opacity: 0 }}>
-          <div className="text-2xl font-bold text-orange-400">92%</div>
-          <div className="text-xs text-slate-400">Success Rate</div>
+          <div className="text-2xl font-bold text-orange-400">
+            {missions.length > 0 ? Math.round(missions.reduce((sum, m) => sum + m.successRate, 0) / missions.length) : 0}%
+          </div>
+          <div className="text-xs text-slate-400">Avg Success Rate</div>
         </div>
       </div>
 
