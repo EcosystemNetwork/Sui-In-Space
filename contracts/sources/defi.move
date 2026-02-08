@@ -595,6 +595,18 @@ module sui_in_space::defi {
         reactor.swap_fee_bps = new_fee_bps;
     }
 
+    /// Create and share an Energy Reactor (entry wrapper)
+    public entry fun create_and_share_reactor(admin: &DefiAdminCap, ctx: &mut TxContext) {
+        let reactor = create_reactor(admin, ctx);
+        transfer::share_object(reactor);
+    }
+
+    /// Create and share an Insurance Pool (entry wrapper)
+    public entry fun create_and_share_insurance_pool(admin: &DefiAdminCap, ctx: &mut TxContext) {
+        let pool = create_insurance_pool(admin, ctx);
+        transfer::share_object(pool);
+    }
+
     /// Update insurance rates
     public fun update_insurance_rates(
         _admin: &DefiAdminCap,

@@ -1,0 +1,800 @@
+/**
+ * Autonomous AI World-Builder Agent Orchestrator
+ *
+ * NEXUS-7 (Game Master): discovers planets, creates missions, builds economy
+ * KRAIT-X (Rival Player): colonizes, runs missions, trades, fights
+ *
+ * Both progress through phases: GENESIS → ... → SUSTAIN (runs indefinitely)
+ *
+ * Usage: pnpm agents          (continuous mode)
+ *        pnpm agents          AGENT_MAX_ROUNDS=20 for limited rounds
+ *
+ * Requires in ../../.env:  PRIVATE_KEY, PRIVATE_KEY_2, ZAI_API_KEY
+ * Requires in ../.env:     VITE_PACKAGE_ID
+ */
+
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import { appendFileSync, readFileSync, writeFileSync, existsSync } from 'fs';
+import dotenv from 'dotenv';
+import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
+import { SuiJsonRpcClient, getJsonRpcFullnodeUrl } from '@mysten/sui/jsonRpc';
+import { Transaction } from '@mysten/sui/transactions';
+import OpenAI from 'openai';
+
+import type { AgentProfile, AgentState, GameState, PlanetInfo, MissionTemplateInfo, PersistedState } from './lib/types.js';
+import {
+  AGENT_TYPES, AGENT_CLASSES, SHIP_CLASSES, STATION_TYPES,
+  PLANET_TYPES, RESOURCE_TYPES, MISSION_TYPES, PROPOSAL_TYPES,
+  AGENT_TYPE_NAMES, AGENT_CLASS_NAMES, SHIP_CLASS_NAMES, STATION_TYPE_NAMES,
+  PLANET_TYPE_NAMES, RESOURCE_TYPE_NAMES,
+} from './lib/types.js';
+import { discoverSharedObjects, discoverPlanets, discoverMissionTemplates, savePersistedState } from './lib/discovery.js';
+import { logActivity, createActivityEntry } from './lib/activity.js';
+import * as exec from './lib/executors.js';
+import { getAvailableActions, checkTransition, getPhaseObjectives, getPhaseTemperature, shouldSkipTurn } from './lib/phases.js';
+import { buildSystemPrompt, buildUserPrompt } from './lib/prompts.js';
+
+// ── Load env ─────────────────────────────────────────────────────
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const ROOT_DIR = resolve(__dirname, '../..');
+const FRONTEND_DIR = resolve(__dirname, '..');
+const ROOT_ENV_PATH = resolve(ROOT_DIR, '.env');
+
+dotenv.config({ path: ROOT_ENV_PATH });
+dotenv.config({ path: resolve(FRONTEND_DIR, '.env') });
+
+const PRIVATE_KEY = process.env.PRIVATE_KEY!;
+const ZAI_API_KEY = process.env.ZAI_API_KEY!;
+const PACKAGE_ID = process.env.VITE_PACKAGE_ID!;
+const MAX_ROUNDS = Number(process.env.AGENT_MAX_ROUNDS) || 0; // 0 = unlimited
+
+if (!PRIVATE_KEY) { console.error('Missing PRIVATE_KEY in ../../.env'); process.exit(1); }
+if (!ZAI_API_KEY) { console.error('Missing ZAI_API_KEY in ../../.env'); process.exit(1); }
+if (!PACKAGE_ID || PACKAGE_ID === '0x0') {
+  console.error('Missing VITE_PACKAGE_ID in frontend/.env — run `pnpm deploy` first.');
+  process.exit(1);
+}
+
+// ── Keypair setup ────────────────────────────────────────────────
+const keypair1 = Ed25519Keypair.fromSecretKey(PRIVATE_KEY);
+const address1 = keypair1.toSuiAddress();
+
+let keypair2: Ed25519Keypair;
+if (process.env.PRIVATE_KEY_2) {
+  keypair2 = Ed25519Keypair.fromSecretKey(process.env.PRIVATE_KEY_2);
+} else {
+  console.log('PRIVATE_KEY_2 not found — generating new keypair for KRAIT-X...');
+  keypair2 = Ed25519Keypair.generate();
+  appendFileSync(ROOT_ENV_PATH, `\nPRIVATE_KEY_2="${keypair2.getSecretKey()}"\n`);
+}
+const address2 = keypair2.toSuiAddress();
+
+// Write addresses to frontend/.env
+function upsertEnvVar(envPath: string, key: string, value: string): void {
+  let content = existsSync(envPath) ? readFileSync(envPath, 'utf-8') : '';
+  if (content.includes(`${key}=`)) {
+    content = content.replace(new RegExp(`^${key}=.*`, 'm'), `${key}=${value}`);
+  } else {
+    content += `\n${key}=${value}`;
+  }
+  writeFileSync(envPath, content.trim() + '\n');
+}
+const FRONTEND_ENV_PATH = resolve(FRONTEND_DIR, '.env');
+upsertEnvVar(FRONTEND_ENV_PATH, 'VITE_NEXUS7_ADDRESS', address1);
+upsertEnvVar(FRONTEND_ENV_PATH, 'VITE_KRAITX_ADDRESS', address2);
+
+// ── SDK setup ────────────────────────────────────────────────────
+const client = new SuiJsonRpcClient({
+  url: getJsonRpcFullnodeUrl('testnet'),
+  network: 'testnet',
+});
+
+const ai = new OpenAI({
+  apiKey: ZAI_API_KEY,
+  baseURL: 'https://open.bigmodel.cn/api/paas/v4/',
+});
+
+// ── Agent profiles ───────────────────────────────────────────────
+const PROFILES: Record<string, { profile: AgentProfile; keypair: Ed25519Keypair }> = {
+  'NEXUS-7': {
+    profile: {
+      name: 'NEXUS-7',
+      role: 'game_master',
+      personality: 'Strategic mastermind. Calculates optimal resource allocation. Builds economic infrastructure and long-term galactic governance.',
+      temperature: 0.5,
+      preferences: 'Prefers: Human/Android agents, Hacker/QuantumEngineer classes, Freighter/Carrier/Cruiser ships, YieldFarm/ResearchLab stations. Names things with corporate/scientific themes.',
+    },
+    keypair: keypair1,
+  },
+  'KRAIT-X': {
+    profile: {
+      name: 'KRAIT-X',
+      role: 'rival_player',
+      personality: 'Aggressive warrior AI. Lives for combat and domination. Colonizes planets, runs high-risk missions, and builds an overwhelming military.',
+      temperature: 0.9,
+      preferences: 'Prefers: Cyborg/AlienSynthetic agents, MechOperator/BountyAI/Psionic classes, Fighter/Dreadnought/Battleship ships. Names things with aggressive/dark themes.',
+    },
+    keypair: keypair2,
+  },
+};
+
+// ── Game state query ─────────────────────────────────────────────
+async function queryGameState(ownerAddress: string): Promise<GameState> {
+  const state: GameState = { agents: [], ships: [], stations: [] };
+  let cursor: string | null | undefined = undefined;
+  let hasMore = true;
+
+  while (hasMore) {
+    const page = await client.getOwnedObjects({
+      owner: ownerAddress,
+      options: { showType: true, showContent: true },
+      ...(cursor ? { cursor } : {}),
+    });
+
+    for (const obj of page.data) {
+      const type = obj.data?.type || '';
+      const content = obj.data?.content;
+      const fields = content && 'fields' in content ? (content as any).fields : null;
+      if (!fields) continue;
+
+      if (type.includes('::agent::Agent')) {
+        state.agents.push({
+          id: obj.data!.objectId,
+          name: fields.name || 'Unknown',
+          type: AGENT_TYPE_NAMES[fields.agent_type] || String(fields.agent_type),
+          class: AGENT_CLASS_NAMES[fields.class] || String(fields.class),
+          level: Number(fields.level || 1),
+          experience: Number(fields.experience || 0),
+          processing: Number(fields.processing || 0),
+          mobility: Number(fields.mobility || 0),
+          power: Number(fields.power || 0),
+          resilience: Number(fields.resilience || 0),
+          luck: Number(fields.luck || 0),
+          firmware_version: Number(fields.firmware_version || 1),
+          is_staked: Boolean(fields.is_staked),
+          on_mission: fields.current_mission !== null && fields.current_mission !== undefined &&
+            (typeof fields.current_mission === 'object' ? Object.keys(fields.current_mission).length > 0 : false),
+        });
+      } else if (type.includes('::ship::Ship')) {
+        const pilotField = fields.pilot;
+        const pilotId = pilotField && typeof pilotField === 'object' && Object.keys(pilotField).length > 0
+          ? String(Object.values(pilotField)[0]) : null;
+        state.ships.push({
+          id: obj.data!.objectId,
+          name: fields.name || 'Unknown',
+          class: SHIP_CLASS_NAMES[fields.ship_class] || String(fields.ship_class),
+          health: Number(fields.current_health || 0),
+          max_health: Number(fields.max_health || 0),
+          speed: Number(fields.speed || 0),
+          firepower: Number(fields.firepower || 0),
+          fuel: Number(fields.fuel || 0),
+          max_fuel: Number(fields.max_fuel || 0),
+          crew_count: Array.isArray(fields.crew) ? fields.crew.length : 0,
+          max_crew: Number(fields.max_crew || 0),
+          pilot: pilotId,
+          is_docked: Boolean(fields.is_docked),
+        });
+      } else if (type.includes('::station::Station')) {
+        state.stations.push({
+          id: obj.data!.objectId,
+          name: fields.name || 'Unknown',
+          type: STATION_TYPE_NAMES[fields.station_type] || String(fields.station_type),
+          level: Number(fields.level || 1),
+          coordinates: {
+            x: Number(fields.coordinates_x || 0),
+            y: Number(fields.coordinates_y || 0),
+            z: Number(fields.coordinates_z || 0),
+          },
+        });
+      }
+    }
+
+    hasMore = page.hasNextPage;
+    cursor = page.nextCursor;
+  }
+  return state;
+}
+
+// ── Query planet/mission data ────────────────────────────────────
+async function queryPlanets(planetIds: string[]): Promise<PlanetInfo[]> {
+  const planets: PlanetInfo[] = [];
+  for (const id of planetIds) {
+    try {
+      const obj = await client.getObject({ id, options: { showContent: true } });
+      const fields = obj.data?.content && 'fields' in obj.data.content ? (obj.data.content as any).fields : null;
+      if (!fields) continue;
+      const ownerField = fields.owner;
+      const owner = ownerField && typeof ownerField === 'object' && Object.keys(ownerField).length > 0
+        ? String(Object.values(ownerField)[0]) : null;
+      planets.push({
+        id,
+        name: fields.name || 'Unknown',
+        planet_type: Number(fields.planet_type || 0),
+        primary_resource: Number(fields.primary_resource || 0),
+        secondary_resource: fields.secondary_resource != null ? Number(fields.secondary_resource) : null,
+        owner,
+        population: Number(fields.population || 0),
+        defense_level: Number(fields.defense_level || 0),
+        total_reserves: Number(fields.total_reserves || 0),
+        extracted_resources: Number(fields.extracted_resources || 0),
+        coordinates: {
+          galaxy_id: Number(fields.galaxy_id || 0),
+          system_id: Number(fields.system_id || 0),
+          x: Number(fields.x || 0),
+          y: Number(fields.y || 0),
+          z: Number(fields.z || 0),
+        },
+        station_count: Array.isArray(fields.stations) ? fields.stations.length : 0,
+        is_under_attack: Boolean(fields.is_under_attack),
+      });
+    } catch { /* skip missing objects */ }
+  }
+  return planets;
+}
+
+async function queryMissionTemplates(templateIds: string[]): Promise<MissionTemplateInfo[]> {
+  const templates: MissionTemplateInfo[] = [];
+  for (const id of templateIds) {
+    try {
+      const obj = await client.getObject({ id, options: { showContent: true } });
+      const fields = obj.data?.content && 'fields' in obj.data.content ? (obj.data.content as any).fields : null;
+      if (!fields) continue;
+      templates.push({
+        id,
+        name: fields.name || 'Unknown',
+        description: fields.description || '',
+        mission_type: Number(fields.mission_type || 0),
+        difficulty: Number(fields.difficulty || 1),
+        min_agent_level: Number(fields.min_agent_level || 0),
+        energy_cost: Number(fields.energy_cost || 0),
+        galactic_cost: Number(fields.galactic_cost || 0),
+        duration_epochs: Number(fields.duration_epochs || 1),
+        base_reward: Number(fields.base_reward || 0),
+        experience_reward: Number(fields.experience_reward || 0),
+        times_completed: Number(fields.times_completed || 0),
+        is_active: fields.is_active !== false,
+      });
+    } catch { /* skip */ }
+  }
+  return templates;
+}
+
+// ── Fund KRAIT-X ─────────────────────────────────────────────────
+async function fundSecondWallet(): Promise<void> {
+  const coins = await client.getCoins({ owner: address2 });
+  if (coins.data.length > 0) {
+    const total = coins.data.reduce((sum, c) => sum + BigInt(c.balance), 0n);
+    if (total > 50_000_000n) {
+      console.log(`  KRAIT-X already funded: ${(Number(total) / 1e9).toFixed(4)} SUI`);
+      return;
+    }
+  }
+  console.log('  Funding KRAIT-X with 0.2 SUI from NEXUS-7...');
+  const tx = new Transaction();
+  const [coin] = tx.splitCoins(tx.gas, [200_000_000]);
+  tx.transferObjects([coin], address2);
+  const result = await client.signAndExecuteTransaction({ transaction: tx, signer: keypair1, options: { showEffects: true } });
+  console.log(`  Funded! Tx: ${result.digest}`);
+  await new Promise(r => setTimeout(r, 2000));
+}
+
+// ── Execute AI decision ──────────────────────────────────────────
+async function executeDecision(
+  decision: any,
+  agentName: string,
+  agentState: AgentState,
+  persistedState: PersistedState,
+  keypair: Ed25519Keypair,
+): Promise<{ digest: string | null; description: string }> {
+  const ctx = { client, signer: keypair, packageId: PACKAGE_ID };
+  const addr = keypair.toSuiAddress();
+
+  switch (decision.action) {
+    case 'mint_agent': {
+      const agentType = AGENT_TYPES[decision.agent_type];
+      const agentClass = AGENT_CLASSES[decision.agent_class];
+      if (agentType === undefined || agentClass === undefined) throw new Error(`Invalid type/class: ${decision.agent_type} ${decision.agent_class}`);
+      const { digest, agentId } = await exec.mintAgent(ctx, addr, decision.name, agentType, agentClass);
+      if (agentId) agentState.ownedAgentIds.push(agentId);
+      return { digest, description: `Minted agent "${decision.name}" (${decision.agent_type} ${decision.agent_class})` };
+    }
+
+    case 'build_ship': {
+      const shipClass = SHIP_CLASSES[decision.ship_class];
+      if (shipClass === undefined) throw new Error(`Invalid ship class: ${decision.ship_class}`);
+      const { digest, shipId } = await exec.buildShip(ctx, addr, decision.name, shipClass);
+      if (shipId) agentState.ownedShipIds.push(shipId);
+      return { digest, description: `Built ship "${decision.name}" (${decision.ship_class})` };
+    }
+
+    case 'build_station': {
+      const stationType = STATION_TYPES[decision.station_type];
+      if (stationType === undefined) throw new Error(`Invalid station type: ${decision.station_type}`);
+      const { digest, stationId } = await exec.buildStation(ctx, addr, decision.name, stationType, u64(decision.x), u64(decision.y), u64(decision.z));
+      if (stationId) agentState.ownedStationIds.push(stationId);
+      return { digest, description: `Built station "${decision.name}" (${decision.station_type})` };
+    }
+
+    case 'train_agent': {
+      if (!isValidObjectId(decision.agent_id)) throw new Error(`Invalid agent_id: ${String(decision.agent_id).slice(0, 40)}...`);
+      const digest = await exec.trainAgent(ctx, decision.agent_id);
+      return { digest, description: `Trained agent ${decision.agent_id.slice(0, 10)}... (+100 XP)` };
+    }
+
+    case 'upgrade_agent': {
+      if (!isValidObjectId(decision.agent_id)) throw new Error(`Invalid agent_id: ${String(decision.agent_id).slice(0, 40)}...`);
+      const digest = await exec.upgradeAgent(ctx, decision.agent_id);
+      return { digest, description: `Upgraded firmware for agent ${decision.agent_id.slice(0, 10)}...` };
+    }
+
+    case 'assign_pilot': {
+      if (!isValidObjectId(decision.ship_id)) throw new Error(`Invalid ship_id`);
+      if (!isValidObjectId(decision.agent_id)) throw new Error(`Invalid agent_id`);
+      const digest = await exec.assignPilot(ctx, decision.ship_id, decision.agent_id);
+      return { digest, description: `Assigned pilot to ship` };
+    }
+
+    case 'add_crew': {
+      if (!isValidObjectId(decision.ship_id)) throw new Error(`Invalid ship_id`);
+      if (!isValidObjectId(decision.agent_id)) throw new Error(`Invalid agent_id`);
+      const digest = await exec.addCrew(ctx, decision.ship_id, decision.agent_id);
+      return { digest, description: `Added crew to ship` };
+    }
+
+    case 'discover_planet': {
+      const adminCapId = persistedState.sharedObjects.adminCaps.planetAdminCap;
+      if (!adminCapId) throw new Error('PlanetAdminCap not found');
+      const planetType = PLANET_TYPES[decision.planet_type];
+      const primaryResource = RESOURCE_TYPES[decision.primary_resource];
+      const secondaryResource = decision.secondary_resource ? RESOURCE_TYPES[decision.secondary_resource] ?? null : null;
+      if (planetType === undefined || primaryResource === undefined) throw new Error(`Invalid planet params`);
+      const { digest, planetId } = await exec.discoverPlanet(
+        ctx, adminCapId, decision.name, planetType,
+        u64(decision.galaxy_id) || 1, u64(decision.system_id) || 1,
+        u64(decision.x), u64(decision.y), u64(decision.z),
+        primaryResource, secondaryResource,
+        u64(decision.total_reserves) || 10000,
+      );
+      if (planetId) persistedState.planetIds.push(planetId);
+      return { digest, description: `Discovered planet "${decision.name}" (${decision.planet_type}, ${decision.primary_resource})` };
+    }
+
+    case 'colonize_planet': {
+      if (!isValidObjectId(decision.planet_id)) throw new Error(`Invalid planet_id: ${String(decision.planet_id).slice(0, 40)}... — must be a real object ID from the state`);
+      const digest = await exec.colonizePlanet(ctx, decision.planet_id);
+      return { digest, description: `Colonized planet ${decision.planet_id.slice(0, 10)}...` };
+    }
+
+    case 'extract_resources': {
+      if (!isValidObjectId(decision.planet_id)) throw new Error(`Invalid planet_id: ${String(decision.planet_id).slice(0, 40)}...`);
+      const epoch = await getCurrentEpoch();
+      const digest = await exec.extractResources(ctx, decision.planet_id, epoch);
+      return { digest, description: `Extracted resources from planet` };
+    }
+
+    case 'upgrade_defense': {
+      if (!isValidObjectId(decision.planet_id)) throw new Error(`Invalid planet_id: ${String(decision.planet_id).slice(0, 40)}...`);
+      const digest = await exec.upgradeDefense(ctx, decision.planet_id, u64(decision.amount) || 1);
+      return { digest, description: `Upgraded planet defense by ${decision.amount}` };
+    }
+
+    case 'create_mission_template': {
+      const adminCapId = persistedState.sharedObjects.adminCaps.missionAdminCap;
+      if (!adminCapId) throw new Error('MissionAdminCap not found');
+      const missionType = MISSION_TYPES[decision.mission_type];
+      if (missionType === undefined) throw new Error(`Invalid mission type: ${decision.mission_type}`);
+      const reqShipClass = decision.required_ship_class ? SHIP_CLASSES[decision.required_ship_class] ?? null : null;
+      const { digest, templateId } = await exec.createMissionTemplate(ctx, adminCapId, {
+        name: decision.name, description: decision.description || '',
+        missionType, difficulty: Number(decision.difficulty) || 1,
+        minAgentLevel: Number(decision.min_agent_level) || 0,
+        minProcessing: Number(decision.min_processing) || 0,
+        minMobility: Number(decision.min_mobility) || 0,
+        minPower: Number(decision.min_power) || 0,
+        requiredShipClass: reqShipClass,
+        energyCost: Number(decision.energy_cost) || 0,
+        galacticCost: Number(decision.galactic_cost) || 0,
+        durationEpochs: Number(decision.duration_epochs) || 1,
+        baseReward: Number(decision.base_reward) || 100,
+        experienceReward: Number(decision.experience_reward) || 50,
+        lootChance: Number(decision.loot_chance) || 20,
+      });
+      if (templateId) persistedState.missionTemplateIds.push(templateId);
+      return { digest, description: `Created mission "${decision.name}" (${decision.mission_type}, diff:${decision.difficulty})` };
+    }
+
+    case 'mint_galactic': {
+      const treasuryId = persistedState.sharedObjects.treasuryId;
+      if (!treasuryId) throw new Error('GalacticTreasury not found');
+      const recipient = decision.recipient || addr;
+      const digest = await exec.mintGalactic(ctx, treasuryId, Number(decision.amount), recipient);
+      return { digest, description: `Minted ${decision.amount} GALACTIC to ${recipient.slice(0, 10)}...` };
+    }
+
+    case 'fund_reward_pool': {
+      const registryId = persistedState.sharedObjects.missionRegistryId;
+      if (!registryId) throw new Error('MissionRegistry not found');
+      const digest = await exec.fundRewardPool(ctx, registryId, Number(decision.amount));
+      return { digest, description: `Funded reward pool with ${decision.amount} GALACTIC` };
+    }
+
+    case 'start_mission': {
+      const registryId = persistedState.sharedObjects.missionRegistryId;
+      if (!registryId) throw new Error('MissionRegistry not found');
+      if (!isValidObjectId(decision.template_id)) throw new Error(`Invalid template_id: ${String(decision.template_id).slice(0, 40)}... — use exact ID from MISSION TEMPLATES list`);
+      if (!isValidObjectId(decision.agent_id)) throw new Error(`Invalid agent_id: ${String(decision.agent_id).slice(0, 40)}...`);
+      const epoch = await getCurrentEpoch();
+      // Look up actual agent stats from game state
+      const ownGameStateForMission = await queryGameState(addr);
+      const agentData = ownGameStateForMission.agents.find(a => a.id === decision.agent_id);
+      const stats = agentData
+        ? { level: agentData.level, processing: agentData.processing, mobility: agentData.mobility, power: agentData.power, luck: agentData.luck }
+        : { level: 1, processing: 10, mobility: 10, power: 10, luck: 5 };
+      const { digest } = await exec.startMission(
+        ctx, registryId, decision.template_id,
+        decision.agent_id, decision.ship_id || null,
+        stats, 0, epoch,
+      );
+      return { digest, description: `Started mission on template ${decision.template_id.slice(0, 10)}...` };
+    }
+
+    case 'complete_mission': {
+      const registryId = persistedState.sharedObjects.missionRegistryId;
+      if (!registryId) throw new Error('MissionRegistry not found');
+      if (!isValidObjectId(decision.template_id)) throw new Error(`Invalid template_id`);
+      if (!isValidObjectId(decision.mission_id)) throw new Error(`Invalid mission_id`);
+      const epoch = await getCurrentEpoch();
+      const digest = await exec.completeMission(ctx, registryId, decision.template_id, decision.mission_id, epoch);
+      return { digest, description: `Completed mission ${decision.mission_id.slice(0, 10)}...` };
+    }
+
+    case 'create_and_share_reactor': {
+      const adminCapId = persistedState.sharedObjects.adminCaps.defiAdminCap;
+      if (!adminCapId) throw new Error('DefiAdminCap not found');
+      const { digest, reactorId } = await exec.createAndShareReactor(ctx, adminCapId);
+      if (reactorId) persistedState.sharedObjects.reactorId = reactorId;
+      return { digest, description: `Created Energy Reactor (LP pool)` };
+    }
+
+    case 'create_and_share_insurance_pool': {
+      const adminCapId = persistedState.sharedObjects.adminCaps.defiAdminCap;
+      if (!adminCapId) throw new Error('DefiAdminCap not found');
+      const { digest, poolId } = await exec.createAndShareInsurancePool(ctx, adminCapId);
+      if (poolId) persistedState.sharedObjects.insurancePoolId = poolId;
+      return { digest, description: `Created Insurance Pool` };
+    }
+
+    case 'add_liquidity': {
+      const reactorId = persistedState.sharedObjects.reactorId;
+      if (!reactorId) throw new Error('Reactor not found');
+      const epoch = await getCurrentEpoch();
+      const { digest, receiptId } = await exec.addLiquidity(
+        ctx, reactorId,
+        Number(decision.galactic_amount), Number(decision.sui_amount), epoch,
+      );
+      if (receiptId) agentState.lpReceiptIds.push(receiptId);
+      return { digest, description: `Added liquidity: ${decision.galactic_amount} GALACTIC + ${decision.sui_amount} SUI` };
+    }
+
+    case 'swap_galactic_for_sui': {
+      const reactorId = persistedState.sharedObjects.reactorId;
+      if (!reactorId) throw new Error('Reactor not found');
+      const digest = await exec.swapGalacticForSui(ctx, reactorId, Number(decision.galactic_amount), Number(decision.min_sui_out) || 0);
+      return { digest, description: `Swapped ${decision.galactic_amount} GALACTIC for SUI` };
+    }
+
+    case 'swap_sui_for_galactic': {
+      const reactorId = persistedState.sharedObjects.reactorId;
+      if (!reactorId) throw new Error('Reactor not found');
+      const digest = await exec.swapSuiForGalactic(ctx, reactorId, Number(decision.sui_amount), Number(decision.min_galactic_out) || 0);
+      return { digest, description: `Swapped ${decision.sui_amount} SUI for GALACTIC` };
+    }
+
+    case 'purchase_insurance': {
+      const poolId = persistedState.sharedObjects.insurancePoolId;
+      if (!poolId) throw new Error('Insurance pool not found');
+      const epoch = await getCurrentEpoch();
+      const { digest, policyId } = await exec.purchaseInsurance(ctx, poolId, Number(decision.insured_amount), epoch);
+      if (policyId) agentState.insurancePolicyIds.push(policyId);
+      return { digest, description: `Purchased insurance for ${decision.insured_amount} GALACTIC` };
+    }
+
+    case 'assign_operator': {
+      if (!isValidObjectId(decision.station_id)) throw new Error(`Invalid station_id`);
+      if (!isValidObjectId(decision.agent_id)) throw new Error(`Invalid agent_id`);
+      const digest = await exec.assignOperator(ctx, decision.station_id, decision.agent_id);
+      return { digest, description: `Assigned operator to station` };
+    }
+
+    case 'dock_ship': {
+      if (!isValidObjectId(decision.station_id)) throw new Error(`Invalid station_id`);
+      if (!isValidObjectId(decision.ship_id)) throw new Error(`Invalid ship_id`);
+      const digest = await exec.dockShip(ctx, decision.station_id, decision.ship_id);
+      return { digest, description: `Docked ship at station` };
+    }
+
+    case 'create_voting_power': {
+      const epoch = await getCurrentEpoch();
+      const { digest, votingPowerId } = await exec.createVotingPower(
+        ctx,
+        Number(decision.token_balance) || 100,
+        Number(decision.staked_balance) || 0,
+        Number(decision.total_agent_levels) || 1,
+        Number(decision.controlled_planets) || 0,
+        epoch,
+      );
+      if (votingPowerId) agentState.votingPowerId = votingPowerId;
+      return { digest, description: `Created voting power snapshot` };
+    }
+
+    case 'create_proposal': {
+      const registryId = persistedState.sharedObjects.governanceRegistryId;
+      if (!registryId) throw new Error('GovernanceRegistry not found');
+      if (!agentState.votingPowerId) throw new Error('No VotingPower — create_voting_power first');
+      const proposalType = PROPOSAL_TYPES[decision.proposal_type] ?? 0;
+      const epoch = await getCurrentEpoch();
+      const { digest, proposalId } = await exec.createProposal(
+        ctx, registryId, agentState.votingPowerId,
+        {
+          title: decision.title, description: decision.description || '',
+          proposalType,
+          targetModule: decision.target_module || 'defi',
+          targetFunction: decision.target_function || 'update_swap_fee',
+          parameters: decision.parameters || [25],
+        },
+        0, epoch,
+      );
+      if (proposalId) persistedState.proposalIds.push(proposalId);
+      return { digest, description: `Created proposal: "${decision.title}"` };
+    }
+
+    case 'cast_vote': {
+      if (!agentState.votingPowerId) throw new Error('No VotingPower');
+      if (!isValidObjectId(decision.proposal_id)) throw new Error(`Invalid proposal_id`);
+      const epoch = await getCurrentEpoch();
+      const digest = await exec.castVote(ctx, decision.proposal_id, agentState.votingPowerId, decision.support !== false, epoch);
+      return { digest, description: `Voted ${decision.support !== false ? 'FOR' : 'AGAINST'} proposal` };
+    }
+
+    default:
+      throw new Error(`Unknown action: ${decision.action}`);
+  }
+}
+
+// ── Helpers ──────────────────────────────────────────────────────
+async function getCurrentEpoch(): Promise<number> {
+  const info = await client.getLatestSuiSystemState();
+  return Number(info.epoch);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+/** Validate that a string looks like a valid Sui object ID (0x + 64 hex chars) */
+function isValidObjectId(id: unknown): id is string {
+  return typeof id === 'string' && /^0x[0-9a-fA-F]{64}$/.test(id);
+}
+
+/** Ensure a number is a non-negative integer (for u64 params) */
+function u64(val: unknown): number {
+  const n = Number(val) || 0;
+  return Math.max(0, Math.floor(n));
+}
+
+/** Try to extract a valid JSON object from AI response */
+function parseAIResponse(raw: string): any {
+  // Try direct parse first
+  try {
+    return JSON.parse(raw);
+  } catch { /* fallthrough */ }
+
+  // Try to find JSON object in the response
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (match) {
+    try {
+      return JSON.parse(match[0]);
+    } catch { /* fallthrough */ }
+  }
+
+  throw new Error('Could not parse AI response as JSON');
+}
+
+// ── Main loop ────────────────────────────────────────────────────
+let running = true;
+process.on('SIGINT', () => {
+  console.log('\n\n  Graceful shutdown requested...');
+  running = false;
+});
+
+async function main() {
+  console.log('════════════════════════════════════════════════════');
+  console.log('  SUI-IN-SPACE  AUTONOMOUS WORLD-BUILDER  (v3)');
+  console.log('════════════════════════════════════════════════════');
+  console.log(`  Package:    ${PACKAGE_ID}`);
+  console.log(`  Network:    testnet`);
+  console.log(`  Mode:       ${MAX_ROUNDS > 0 ? `${MAX_ROUNDS} rounds` : 'continuous (Ctrl+C to stop)'}`);
+  console.log('────────────────────────────────────────────────────');
+  console.log(`  NEXUS-7:    ${address1}`);
+  console.log(`  KRAIT-X:    ${address2}`);
+  console.log('════════════════════════════════════════════════════\n');
+
+  // Fund KRAIT-X
+  await fundSecondWallet();
+
+  // Discover shared objects
+  console.log('\n  Discovering shared objects...');
+  const persistedState = await discoverSharedObjects(client, address1, PACKAGE_ID, address2);
+
+  // Also discover existing planets and mission templates from events
+  const eventPlanets = await discoverPlanets(client, PACKAGE_ID);
+  const eventTemplates = await discoverMissionTemplates(client, PACKAGE_ID);
+  for (const id of eventPlanets) {
+    if (!persistedState.planetIds.includes(id)) persistedState.planetIds.push(id);
+  }
+  for (const id of eventTemplates) {
+    if (!persistedState.missionTemplateIds.includes(id)) persistedState.missionTemplateIds.push(id);
+  }
+
+  // ── Fixup: correct any phase desync from previous runs ──
+  // If KRAIT-X advanced to ECONOMY but reactor doesn't exist, reset to CONTENT
+  if (persistedState.kraitX.phase === 'ECONOMY' && !persistedState.sharedObjects.reactorId) {
+    console.log('  Fixup: KRAIT-X at ECONOMY but no reactor — resetting to CONTENT');
+    persistedState.kraitX.phase = 'CONTENT';
+    persistedState.kraitX.roundsInPhase = 0;
+  }
+  // If KRAIT-X at CONTENT but no mission templates exist, reset to COLONIZE
+  if (persistedState.kraitX.phase === 'CONTENT' && persistedState.missionTemplateIds.length === 0) {
+    if (persistedState.planetIds.length > 0) {
+      console.log('  Fixup: KRAIT-X at CONTENT but no templates — resetting to COLONIZE');
+      persistedState.kraitX.phase = 'COLONIZE';
+      persistedState.kraitX.roundsInPhase = 0;
+    }
+  }
+  savePersistedState(persistedState);
+
+  let totalRound = 0;
+  const agentOrder = ['NEXUS-7', 'KRAIT-X'] as const;
+
+  while (running) {
+    totalRound++;
+    if (MAX_ROUNDS > 0 && totalRound > MAX_ROUNDS) break;
+
+    console.log(`\n${'═'.repeat(50)}`);
+    console.log(`  ROUND ${totalRound}${MAX_ROUNDS > 0 ? ` / ${MAX_ROUNDS}` : ''}`);
+    console.log(`${'═'.repeat(50)}`);
+
+    for (const agentName of agentOrder) {
+      if (!running) break;
+
+      const { profile, keypair } = PROFILES[agentName];
+      const agentState = agentName === 'NEXUS-7' ? persistedState.nexus7 : persistedState.kraitX;
+      const rivalName = agentName === 'NEXUS-7' ? 'KRAIT-X' : 'NEXUS-7';
+      const rivalState = agentName === 'NEXUS-7' ? persistedState.kraitX : persistedState.nexus7;
+
+      // Check phase transition
+      const ownGameState = await queryGameState(agentState.address);
+      const nextPhase = checkTransition(agentState, ownGameState, persistedState);
+      if (nextPhase) {
+        console.log(`\n  ${agentName}: Phase transition ${agentState.phase} → ${nextPhase}`);
+        agentState.phase = nextPhase;
+        agentState.roundsInPhase = 0;
+      }
+
+      // Check if should skip (waiting for other agent)
+      if (shouldSkipTurn(agentState, persistedState)) {
+        console.log(`  ${agentName}: Waiting (phase=${agentState.phase})...`);
+        // Auto-advance KRAIT-X from WORLD_BUILD to COLONIZE if planets exist
+        if (agentState.phase === 'WORLD_BUILD' && agentState.role === 'rival_player' && persistedState.planetIds.length >= 1) {
+          agentState.phase = 'COLONIZE';
+          agentState.roundsInPhase = 0;
+          console.log(`  ${agentName}: Advancing to COLONIZE (planets available)`);
+        }
+        continue;
+      }
+
+      // Get available actions for this phase
+      const actions = getAvailableActions(agentState.phase, agentState.role);
+      if (actions.length === 0) continue;
+
+      const objectives = getPhaseObjectives(agentState.phase, agentState.role);
+      const temp = getPhaseTemperature(agentState.phase, profile.temperature);
+
+      // Query world state for the prompt
+      const rivalGameState = await queryGameState(rivalState.address);
+      const planets = await queryPlanets(persistedState.planetIds);
+      const templates = await queryMissionTemplates(persistedState.missionTemplateIds);
+
+      // Build prompt
+      const systemPrompt = buildSystemPrompt(profile, rivalName, rivalState.address, agentState.phase, objectives, actions);
+      const userPrompt = buildUserPrompt(ownGameState, rivalGameState, rivalName, agentState.phase, persistedState, planets, templates, agentState);
+
+      console.log(`\n${'─'.repeat(50)}`);
+      console.log(`  ${agentName} [${agentState.phase}] (round ${agentState.roundsInPhase + 1}) thinking...`);
+      console.log(`${'─'.repeat(50)}`);
+
+      // Call AI
+      let decision: any;
+      try {
+        const completion = await ai.chat.completions.create({
+          model: 'GLM-4.7-Flash',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+          temperature: temp,
+          response_format: { type: 'json_object' },
+        });
+
+        const raw = completion.choices[0]?.message?.content || '{}';
+        console.log(`  ${agentName} decided:`, raw.slice(0, 200));
+        decision = parseAIResponse(raw);
+        if (!decision.action) throw new Error('AI response missing "action" field');
+      } catch (e: any) {
+        const code = e.code || e.status;
+        if (code === '1113' || e.status === 429) {
+          console.error(`  ${agentName}: Zhipu AI insufficient balance`);
+        } else {
+          console.error(`  ${agentName}: AI error:`, e.message?.slice(0, 200));
+        }
+        continue;
+      }
+
+      // Execute
+      let digest: string | null = null;
+      let description = '';
+      let success = false;
+      try {
+        const result = await executeDecision(decision, agentName, agentState, persistedState, keypair);
+        digest = result.digest;
+        description = result.description;
+        success = true;
+        console.log(`  ${agentName}: SUCCESS — ${description}`);
+        if (digest) console.log(`  Tx: https://suiscan.xyz/testnet/tx/${digest}`);
+      } catch (e: any) {
+        description = `Failed: ${e.message?.slice(0, 200)}`;
+        console.error(`  ${agentName}: ${description}`);
+      }
+
+      // Log activity
+      logActivity(createActivityEntry(
+        agentName, agentState.phase, decision.action || 'unknown',
+        description, decision.reasoning || '',
+        digest, success, { decision },
+      ));
+
+      // Update agent state
+      agentState.roundsInPhase++;
+      agentState.totalRounds++;
+
+      // Save state
+      savePersistedState(persistedState);
+
+      // Sleep between agents
+      const sleepMs = ['SUSTAIN', 'GOVERNANCE'].includes(agentState.phase) ? 15000 : 8000;
+      if (running) {
+        console.log(`  Waiting ${sleepMs / 1000}s...`);
+        await sleep(sleepMs);
+      }
+    }
+  }
+
+  // Final summary
+  console.log(`\n${'═'.repeat(50)}`);
+  console.log('  SESSION COMPLETE');
+  console.log(`${'═'.repeat(50)}`);
+  console.log(`  NEXUS-7: phase=${persistedState.nexus7.phase}, rounds=${persistedState.nexus7.totalRounds}`);
+  console.log(`  KRAIT-X: phase=${persistedState.kraitX.phase}, rounds=${persistedState.kraitX.totalRounds}`);
+  console.log(`  Planets discovered: ${persistedState.planetIds.length}`);
+  console.log(`  Mission templates: ${persistedState.missionTemplateIds.length}`);
+  console.log(`  Reactor: ${persistedState.sharedObjects.reactorId ? 'created' : 'not yet'}`);
+  console.log(`  Insurance: ${persistedState.sharedObjects.insurancePoolId ? 'created' : 'not yet'}`);
+  console.log('════════════════════════════════════════════════════\n');
+}
+
+main().catch(e => {
+  console.error('Fatal error:', e);
+  process.exit(1);
+});

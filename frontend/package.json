@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "lint": "eslint src/",
     "test": "vitest",
-    "merkle": "tsx scripts/compute-merkle.ts"
+    "merkle": "tsx scripts/compute-merkle.ts",
+    "publish-contracts": "tsx scripts/deploy.ts",
+    "agents": "tsx scripts/run-agents.ts",
+    "agents:continuous": "AGENT_MAX_ROUNDS=0 tsx scripts/run-agents.ts"
   },
   "dependencies": {
     "@mysten/dapp-kit": "^1.0.1",
@@ -22,8 +25,10 @@
     "@supabase/supabase-js": "^2.95.2",
     "@tanstack/react-query": "^5.90.20",
     "animejs": "^4.3.5",
+    "dotenv": "^17.2.4",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.563.0",
+    "openai": "^6.18.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "three": "^0.182.0",
