@@ -90,10 +90,11 @@ const EVENT_COLORS: Record<ActivityEvent['type'], string> = {
 interface ActivityLogProps {
   maxEvents?: number;
   compact?: boolean;
+  events?: ActivityEvent[];
 }
 
-export const ActivityLog: React.FC<ActivityLogProps> = ({ maxEvents = 5, compact = false }) => {
-  const events = DEMO_EVENTS.slice(0, maxEvents);
+export const ActivityLog: React.FC<ActivityLogProps> = ({ maxEvents = 5, compact = false, events: externalEvents }) => {
+  const events = (externalEvents && externalEvents.length > 0 ? externalEvents : DEMO_EVENTS).slice(0, maxEvents);
   const containerRef = useRef<HTMLDivElement>(null);
   const eventsRef = useRef<HTMLDivElement>(null);
   

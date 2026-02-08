@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { animate, stagger } from 'animejs';
 import { StationType } from '../../types';
-import { useMockActions } from '../../hooks/useMockActions';
+import { useGameActions } from '../../hooks/useGameActions';
+import { useGameStore } from '../../hooks/useGameStore';
 
 /**
  * DeFi View Component
@@ -123,10 +124,28 @@ const STATION_NAMES: Record<StationType, string> = {
 export const DefiView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'stations' | 'pools' | 'swap'>('stations');
   const [selectedStation, setSelectedStation] = useState<DemoStation | null>(null);
-  const { stake, unstake, claimYield, addLiquidity, removeLiquidity, swap } = useMockActions();
+  const { stake, unstake, claimYield, addLiquidity, removeLiquidity, swap } = useGameActions();
+  const player = useGameStore((s) => s.player);
 
-  const totalStakedByPlayer = DEMO_STATIONS.reduce((sum, s) => sum + s.playerStake, 0);
-  const totalPendingRewards = DEMO_STATIONS.reduce((sum, s) => sum + s.pendingRewards, 0);
+  // Build display stations from game store data, fall back to demo if empty
+  const storeStations: DemoStation[] = (player?.stations ?? []).map((st) => ({
+    id: st.id,
+    name: st.name,
+    type: st.stationType,
+    level: st.level,
+    totalStaked: Number(st.totalStaked),
+    apy: st.yieldRate / 10,
+    operators: st.operators.length,
+    maxOperators: st.maxOperators,
+    efficiency: st.efficiency,
+    playerStake: 0,
+    pendingRewards: 0,
+  }));
+
+  const displayStations = storeStations.length > 0 ? storeStations : DEMO_STATIONS;
+
+  const totalStakedByPlayer = displayStations.reduce((sum, s) => sum + s.playerStake, 0);
+  const totalPendingRewards = displayStations.reduce((sum, s) => sum + s.pendingRewards, 0);
   const totalLPValue = DEMO_POOLS.reduce((sum, p) => sum + p.playerLP, 0);
 
   const headerRef = useRef<HTMLDivElement>(null);
@@ -234,7 +253,7 @@ export const DefiView: React.FC = () => {
         <div ref={contentRef} style={{ opacity: 0 }}>
           {/* Stations Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {DEMO_STATIONS.map((station) => (
+            {displayStations.map((station) => (
               <div
                 key={station.id}
                 onClick={() => setSelectedStation(selectedStation?.id === station.id ? null : station)}

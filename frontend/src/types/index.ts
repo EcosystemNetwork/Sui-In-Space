@@ -471,6 +471,7 @@ export interface VoteCastEvent {
 
 export interface PlayerState {
   address: Address;
+  dbId?: string;
   galacticBalance: bigint;
   suiBalance: bigint;
   agents: Agent[];
