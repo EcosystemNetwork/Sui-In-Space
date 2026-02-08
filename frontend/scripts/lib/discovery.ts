@@ -25,6 +25,7 @@ function defaultAgentState(name: string, role: 'game_master' | 'rival_player', a
     ownedAgentIds: [],
     ownedShipIds: [],
     ownedStationIds: [],
+    votedProposalIds: [],
     lpReceiptIds: [],
     insurancePolicyIds: [],
   };

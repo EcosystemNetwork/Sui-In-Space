@@ -682,7 +682,7 @@ async function executeDecision(
           proposalType,
           targetModule: decision.target_module || 'defi',
           targetFunction: decision.target_function || 'update_swap_fee',
-          parameters: decision.parameters || [25],
+          parameters: (decision.parameters || [25]).map((p: number) => Math.floor(Number(p))),
         },
         galacticCost, epoch,
       );
@@ -882,8 +882,8 @@ async function main() {
       const ctx1 = { client, signer: keypair1, packageId: PACKAGE_ID };
       console.log('  Setting governance parameters for testing...');
       const digest = await exec.updateGovernanceParameters(ctx1, govAdminCap, govRegistryId, {
-        votingPeriod: 2,
-        executionDelay: 1,
+        votingPeriod: 1,
+        executionDelay: 0,
         proposalThreshold: 1_000_000_000, // 1 GALACTIC (9 decimals)
         quorumThreshold: 10,
       });
@@ -941,6 +941,9 @@ async function main() {
       // Governance prerequisite: need VotingPower before proposals/votes
       if (!agentState.votingPowerId) {
         actions = actions.filter(a => a !== 'create_proposal' && a !== 'cast_vote');
+      } else {
+        // Already have VotingPower — don't create another
+        actions = actions.filter(a => a !== 'create_voting_power');
       }
       // Can't vote if no proposals exist
       if (persistedState.proposalIds.length === 0) {
@@ -967,6 +970,105 @@ async function main() {
           a !== 'swap_galactic_for_sui' && a !== 'fund_reward_pool'
         );
       }
+      // Auto-create voting power if in governance-capable phase and missing
+      if (['GOVERNANCE', 'SUSTAIN'].includes(agentState.phase) && !agentState.votingPowerId) {
+        if (actions.includes('create_voting_power')) {
+          console.log(`  ${agentName}: Auto-creating voting power...`);
+          try {
+            const result = await executeDecision(
+              { action: 'create_voting_power' },
+              agentName, agentState, persistedState, keypair,
+            );
+            console.log(`  ${agentName}: ${result.description}`);
+            logActivity(createActivityEntry(agentName, agentState.phase, 'create_voting_power', result.description, 'Auto-created (prerequisite)', result.digest, true, {}));
+            await sleep(3000);
+          } catch (e: any) {
+            console.error(`  ${agentName}: Auto-create voting power failed: ${e.message?.slice(0, 150)}`);
+          }
+        }
+      }
+
+      // Auto-vote on active proposals (skip already-voted)
+      if (!agentState.votedProposalIds) agentState.votedProposalIds = [];
+      if (['GOVERNANCE', 'SUSTAIN'].includes(agentState.phase) && agentState.votingPowerId && persistedState.proposalIds.length > 0) {
+        const currentEpochForVote = await getCurrentEpoch();
+        const activeProposals = await queryProposals(persistedState.proposalIds);
+        const votable = activeProposals.filter(p =>
+          p.status === 0 && p.voting_ends_at > currentEpochForVote &&
+          !agentState.votedProposalIds.includes(p.id)
+        );
+        for (const proposal of votable) {
+          console.log(`  ${agentName}: Auto-voting FOR proposal "${proposal.title}"...`);
+          try {
+            const result = await executeDecision(
+              { action: 'cast_vote', proposal_id: proposal.id, support: true },
+              agentName, agentState, persistedState, keypair,
+            );
+            console.log(`  ${agentName}: ${result.description}`);
+            agentState.votedProposalIds.push(proposal.id);
+            logActivity(createActivityEntry(agentName, agentState.phase, 'cast_vote', result.description, 'Auto-voted (governance lifecycle)', result.digest, true, {}));
+            await sleep(2000);
+          } catch (e: any) {
+            // If already voted on-chain (abort code 4), track it to avoid retrying
+            agentState.votedProposalIds.push(proposal.id);
+            console.error(`  ${agentName}: Auto-vote failed: ${e.message?.slice(0, 150)}`);
+          }
+        }
+      }
+
+      // Auto-finalize proposals past voting period
+      if (['GOVERNANCE', 'SUSTAIN'].includes(agentState.phase) && persistedState.proposalIds.length > 0) {
+        const currentEpochForFinalize = await getCurrentEpoch();
+        const allProposals = await queryProposals(persistedState.proposalIds);
+        const finalizable = allProposals.filter(p => p.status === 0 && p.voting_ends_at <= currentEpochForFinalize);
+        for (const proposal of finalizable) {
+          console.log(`  ${agentName}: Auto-finalizing proposal "${proposal.title}"...`);
+          try {
+            const result = await executeDecision(
+              { action: 'finalize_proposal', proposal_id: proposal.id },
+              agentName, agentState, persistedState, keypair,
+            );
+            console.log(`  ${agentName}: ${result.description}`);
+            logActivity(createActivityEntry(agentName, agentState.phase, 'finalize_proposal', result.description, 'Auto-finalized (governance lifecycle)', result.digest, true, {}));
+            await sleep(2000);
+          } catch (e: any) {
+            console.error(`  ${agentName}: Auto-finalize failed: ${e.message?.slice(0, 150)}`);
+          }
+        }
+      }
+
+      // Auto-execute passed proposals
+      if (['GOVERNANCE', 'SUSTAIN'].includes(agentState.phase) && persistedState.proposalIds.length > 0) {
+        const currentEpochForExec = await getCurrentEpoch();
+        const execProposals = await queryProposals(persistedState.proposalIds);
+        const executable = execProposals.filter(p => p.status === 1 && p.execution_after <= currentEpochForExec);
+        for (const proposal of executable) {
+          console.log(`  ${agentName}: Auto-executing proposal "${proposal.title}"...`);
+          try {
+            const result = await executeDecision(
+              { action: 'execute_proposal', proposal_id: proposal.id },
+              agentName, agentState, persistedState, keypair,
+            );
+            console.log(`  ${agentName}: ${result.description}`);
+            logActivity(createActivityEntry(agentName, agentState.phase, 'execute_proposal', result.description, 'Auto-executed (governance lifecycle)', result.digest, true, {}));
+            await sleep(2000);
+          } catch (e: any) {
+            console.error(`  ${agentName}: Auto-execute failed: ${e.message?.slice(0, 150)}`);
+          }
+        }
+      }
+
+      // Force governance actions every 3rd round in SUSTAIN
+      if (agentState.phase === 'SUSTAIN' && agentState.roundsInPhase % 3 === 0) {
+        const govActions = actions.filter(a =>
+          ['create_voting_power', 'create_proposal', 'cast_vote', 'finalize_proposal', 'execute_proposal'].includes(a)
+        );
+        if (govActions.length > 0) {
+          actions = govActions;
+          console.log(`  ${agentName}: Governance round — restricted to: ${actions.join(', ')}`);
+        }
+      }
+
       if (actions.length === 0) continue;
 
       const objectives = getPhaseObjectives(agentState.phase, agentState.role);
@@ -1083,6 +1185,10 @@ async function main() {
         console.log(`  ${agentName} decided:`, raw.slice(0, 200));
         decision = parseAIResponse(raw);
         if (!decision.action) throw new Error('AI response missing "action" field');
+        // Validate AI action against available actions list
+        if (!actions.includes(decision.action)) {
+          throw new Error(`Action "${decision.action}" not available in ${agentState.phase} phase. Available: ${actions.join(', ')}`);
+        }
       } catch (e: any) {
         const code = e.code || e.status;
         if (code === '1113' || e.status === 429) {
@@ -1104,6 +1210,13 @@ async function main() {
         success = true;
         console.log(`  ${agentName}: SUCCESS — ${description}`);
         if (digest) console.log(`  Tx: https://suiscan.xyz/testnet/tx/${digest}`);
+        // Track AI-initiated votes to avoid auto-vote re-voting
+        if (decision.action === 'cast_vote' && decision.proposal_id) {
+          if (!agentState.votedProposalIds) agentState.votedProposalIds = [];
+          if (!agentState.votedProposalIds.includes(decision.proposal_id)) {
+            agentState.votedProposalIds.push(decision.proposal_id);
+          }
+        }
       } catch (e: any) {
         description = `Failed: ${e.message?.slice(0, 200)}`;
         console.error(`  ${agentName}: ${description}`);

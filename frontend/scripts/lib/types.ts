@@ -31,6 +31,7 @@ export interface AgentState {
   ownedStationIds: string[];
   /** IDs for specific tracking */
   votingPowerId?: string;
+  votedProposalIds: string[];
   lpReceiptIds: string[];
   insurancePolicyIds: string[];
 }

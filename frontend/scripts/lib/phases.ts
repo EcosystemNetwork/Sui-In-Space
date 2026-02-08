@@ -141,8 +141,8 @@ export function checkTransition(
     }
 
     case 'GOVERNANCE': {
-      // Transition after 3 rounds
-      if (roundsInPhase >= 3) return 'SUSTAIN';
+      // Transition after 6 rounds (enough for full governance lifecycle)
+      if (roundsInPhase >= 6) return 'SUSTAIN';
       return null;
     }
 
