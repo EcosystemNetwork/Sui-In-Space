@@ -1,5 +1,7 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import { animate, stagger } from 'animejs';
+import { useLiveData } from '../hooks/useLiveData';
+import { activityEntryToEvent } from '../utils/liveDataAdapters';
 
 /**
  * Activity Log Component
@@ -93,7 +95,18 @@ interface ActivityLogProps {
 }
 
 export const ActivityLog: React.FC<ActivityLogProps> = ({ maxEvents = 5, compact = false }) => {
-  const events = DEMO_EVENTS.slice(0, maxEvents);
+  let liveData: ReturnType<typeof useLiveData> | null = null;
+  try { liveData = useLiveData(); } catch { /* outside provider */ }
+
+  const liveEvents = useMemo<ActivityEvent[]>(() => {
+    if (!liveData?.configured || liveData.activity.length === 0) return [];
+    return liveData.activity
+      .slice(-maxEvents)
+      .reverse()
+      .map((e, i) => activityEntryToEvent(e, i) as unknown as ActivityEvent);
+  }, [liveData?.configured, liveData?.activity, maxEvents]);
+
+  const events = liveEvents.length > 0 ? liveEvents : DEMO_EVENTS.slice(0, maxEvents);
   const containerRef = useRef<HTMLDivElement>(null);
   const eventsRef = useRef<HTMLDivElement>(null);
   

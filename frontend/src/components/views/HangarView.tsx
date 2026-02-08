@@ -1,9 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { animate, stagger } from 'animejs';
 import { ShipCard } from '../ShipCard';
 import type { Ship } from '../../types';
 import { ShipClass } from '../../types';
 import { useGameActions } from '../../hooks/useGameActions';
+import { useLiveData } from '../../hooks/useLiveData';
+import { shipInfoToShip } from '../../utils/liveDataAdapters';
 
 /**
  * Hangar View Component
@@ -89,6 +91,14 @@ export const HangarView: React.FC = () => {
   const [selectedShip, setSelectedShip] = useState<Ship | null>(null);
   const [viewMode, setViewMode] = useState<'fleet' | 'build'>('fleet');
   const { buildShip, repairShip, refuelShip, deployShip, recallShip } = useGameActions();
+  const { allShips, configured } = useLiveData();
+
+  const liveShips = useMemo(() => {
+    if (!configured || allShips.length === 0) return null;
+    return allShips.map(s => shipInfoToShip(s));
+  }, [configured, allShips]);
+
+  const ships = liveShips ?? DEMO_SHIPS;
 
   const headerRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
@@ -176,34 +186,44 @@ export const HangarView: React.FC = () => {
           {/* Fleet Stats */}
           <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="stat-card p-3 rounded-lg bg-blue-500/10 border border-blue-500/30" style={{ opacity: 0 }}>
-              <div className="text-2xl font-bold text-blue-400">{DEMO_SHIPS.length}</div>
+              <div className="text-2xl font-bold text-blue-400">{ships.length}</div>
               <div className="text-xs text-slate-400">Total Ships</div>
             </div>
             <div className="stat-card p-3 rounded-lg bg-green-500/10 border border-green-500/30" style={{ opacity: 0 }}>
-              <div className="text-2xl font-bold text-green-400">{DEMO_SHIPS.filter(s => s.isDocked).length}</div>
+              <div className="text-2xl font-bold text-green-400">{ships.filter(s => s.isDocked).length}</div>
               <div className="text-xs text-slate-400">Docked</div>
             </div>
             <div className="stat-card p-3 rounded-lg bg-orange-500/10 border border-orange-500/30" style={{ opacity: 0 }}>
-              <div className="text-2xl font-bold text-orange-400">{DEMO_SHIPS.reduce((sum, s) => sum + s.firepower, 0)}</div>
+              <div className="text-2xl font-bold text-orange-400">{ships.reduce((sum, s) => sum + s.firepower, 0)}</div>
               <div className="text-xs text-slate-400">Total Firepower</div>
             </div>
             <div className="stat-card p-3 rounded-lg bg-purple-500/10 border border-purple-500/30" style={{ opacity: 0 }}>
-              <div className="text-2xl font-bold text-purple-400">{DEMO_SHIPS.reduce((sum, s) => sum + s.cargoCapacity, 0)}</div>
-              <div className="text-xs text-slate-400">Cargo Capacity</div>
+              <div className="text-2xl font-bold text-purple-400">{ships.reduce((sum, s) => sum + s.crew.length, 0)}</div>
+              <div className="text-xs text-slate-400">Total Crew</div>
             </div>
           </div>
 
           {/* Ship Grid */}
           <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {DEMO_SHIPS.map((ship) => (
-              <div key={ship.id} className="ship-card-wrapper" style={{ opacity: 0 }}>
-                <ShipCard
-                  ship={ship}
-                  isSelected={selectedShip?.id === ship.id}
-                  onClick={() => setSelectedShip(ship)}
-                />
-              </div>
-            ))}
+            {ships.map((ship) => {
+              const fleet = (ship as Ship & { fleet?: string }).fleet;
+              return (
+                <div key={ship.id} className="ship-card-wrapper relative" style={{ opacity: 0 }}>
+                  {fleet && (
+                    <span className={`absolute top-2 right-2 z-10 px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                      fleet === 'NEXUS-7' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40' : 'bg-red-500/20 text-red-400 border border-red-500/40'
+                    }`}>
+                      {fleet}
+                    </span>
+                  )}
+                  <ShipCard
+                    ship={ship}
+                    isSelected={selectedShip?.id === ship.id}
+                    onClick={() => setSelectedShip(ship)}
+                  />
+                </div>
+              );
+            })}
           </div>
 
           {/* Selected Ship Actions */}

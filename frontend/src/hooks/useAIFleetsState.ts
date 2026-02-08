@@ -119,6 +119,7 @@ export interface TreasuryInfo {
 export interface WorldState {
   planets: PlanetInfo[];
   missionTemplates: MissionTemplateInfo[];
+  proposals: ProposalInfo[];
   reactor: ReactorInfo | null;
   insurancePool: InsurancePoolInfo | null;
   governance: GovernanceInfo | null;
@@ -134,6 +135,19 @@ export interface AgentPhaseState {
 
 // ── Internal persisted state shape (from agent-state.json) ───────
 
+export interface ProposalInfo {
+  id: string;
+  title: string;
+  description: string;
+  proposal_type: number;
+  votes_for: number;
+  votes_against: number;
+  status: number;
+  created_at: number;
+  voting_ends_at: number;
+  execution_after: number;
+}
+
 interface PersistedStateJson {
   packageId: string;
   sharedObjects: {
@@ -147,10 +161,11 @@ interface PersistedStateJson {
   kraitX: { phase: string; roundsInPhase: number; totalRounds: number };
   planetIds: string[];
   missionTemplateIds: string[];
+  proposalIds?: string[];
 }
 
 const EMPTY_FLEET: FleetState = { address: '', agents: [], ships: [], stations: [] };
-const EMPTY_WORLD: WorldState = { planets: [], missionTemplates: [], reactor: null, insurancePool: null, governance: null, treasury: null };
+const EMPTY_WORLD: WorldState = { planets: [], missionTemplates: [], proposals: [], reactor: null, insurancePool: null, governance: null, treasury: null };
 
 const POLL_INTERVAL = 8000;
 
@@ -257,7 +272,7 @@ async function fetchObjectFields(id: string): Promise<any | null> {
 async function queryWorldState(persistedState: PersistedStateJson | null): Promise<WorldState> {
   if (!persistedState) return EMPTY_WORLD;
 
-  const world: WorldState = { planets: [], missionTemplates: [], reactor: null, insurancePool: null, governance: null, treasury: null };
+  const world: WorldState = { planets: [], missionTemplates: [], proposals: [], reactor: null, insurancePool: null, governance: null, treasury: null };
 
   // Planets
   for (const id of (persistedState.planetIds || [])) {
@@ -293,6 +308,23 @@ async function queryWorldState(persistedState: PersistedStateJson | null): Promi
       experience_reward: Number(f.experience_reward || 0),
       times_completed: Number(f.times_completed || 0),
       is_active: f.is_active !== false,
+    });
+  }
+
+  // Proposals
+  for (const id of (persistedState.proposalIds || [])) {
+    const f = await fetchObjectFields(id);
+    if (!f) continue;
+    world.proposals.push({
+      id, title: f.title || 'Untitled',
+      description: f.description || '',
+      proposal_type: Number(f.proposal_type || 0),
+      votes_for: Number(f.votes_for || 0),
+      votes_against: Number(f.votes_against || 0),
+      status: Number(f.status || 0),
+      created_at: Number(f.created_at || 0),
+      voting_ends_at: Number(f.voting_ends_at || 0),
+      execution_after: Number(f.execution_after || 0),
     });
   }
 
