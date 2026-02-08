@@ -332,6 +332,8 @@ async function executeDecision(
     case 'assign_pilot': {
       if (!isValidObjectId(decision.ship_id)) throw new Error(`Invalid ship_id`);
       if (!isValidObjectId(decision.agent_id)) throw new Error(`Invalid agent_id`);
+      if (!agentState.ownedShipIds.includes(decision.ship_id)) throw new Error(`ship_id ${decision.ship_id.slice(0, 10)}... not in your fleet — pick an ID from YOUR Ships list`);
+      if (!agentState.ownedAgentIds.includes(decision.agent_id)) throw new Error(`agent_id ${decision.agent_id.slice(0, 10)}... not in your roster — pick an ID from YOUR Agents list`);
       const digest = await exec.assignPilot(ctx, decision.ship_id, decision.agent_id);
       return { digest, description: `Assigned pilot to ship` };
     }
@@ -339,6 +341,8 @@ async function executeDecision(
     case 'add_crew': {
       if (!isValidObjectId(decision.ship_id)) throw new Error(`Invalid ship_id`);
       if (!isValidObjectId(decision.agent_id)) throw new Error(`Invalid agent_id`);
+      if (!agentState.ownedShipIds.includes(decision.ship_id)) throw new Error(`ship_id ${decision.ship_id.slice(0, 10)}... not in your fleet — pick an ID from YOUR Ships list`);
+      if (!agentState.ownedAgentIds.includes(decision.agent_id)) throw new Error(`agent_id ${decision.agent_id.slice(0, 10)}... not in your roster — pick an ID from YOUR Agents list`);
       const digest = await exec.addCrew(ctx, decision.ship_id, decision.agent_id);
       return { digest, description: `Added crew to ship` };
     }
@@ -504,6 +508,8 @@ async function executeDecision(
     case 'assign_operator': {
       if (!isValidObjectId(decision.station_id)) throw new Error(`Invalid station_id`);
       if (!isValidObjectId(decision.agent_id)) throw new Error(`Invalid agent_id`);
+      if (!agentState.ownedStationIds.includes(decision.station_id)) throw new Error(`station_id ${decision.station_id.slice(0, 10)}... not yours`);
+      if (!agentState.ownedAgentIds.includes(decision.agent_id)) throw new Error(`agent_id ${decision.agent_id.slice(0, 10)}... not in your roster`);
       const digest = await exec.assignOperator(ctx, decision.station_id, decision.agent_id);
       return { digest, description: `Assigned operator to station` };
     }
@@ -511,6 +517,8 @@ async function executeDecision(
     case 'dock_ship': {
       if (!isValidObjectId(decision.station_id)) throw new Error(`Invalid station_id`);
       if (!isValidObjectId(decision.ship_id)) throw new Error(`Invalid ship_id`);
+      if (!agentState.ownedStationIds.includes(decision.station_id)) throw new Error(`station_id ${decision.station_id.slice(0, 10)}... not yours`);
+      if (!agentState.ownedShipIds.includes(decision.ship_id)) throw new Error(`ship_id ${decision.ship_id.slice(0, 10)}... not in your fleet`);
       const digest = await exec.dockShip(ctx, decision.station_id, decision.ship_id);
       return { digest, description: `Docked ship at station` };
     }
@@ -695,8 +703,26 @@ async function main() {
         continue;
       }
 
-      // Get available actions for this phase
-      const actions = getAvailableActions(agentState.phase, agentState.role);
+      // Get available actions for this phase, then filter by prerequisites
+      let actions = getAvailableActions(agentState.phase, agentState.role);
+      // Governance prerequisite: need VotingPower before proposals/votes
+      if (!agentState.votingPowerId) {
+        actions = actions.filter(a => a !== 'create_proposal' && a !== 'cast_vote');
+      }
+      // Can't vote if no proposals exist
+      if (persistedState.proposalIds.length === 0) {
+        actions = actions.filter(a => a !== 'cast_vote');
+      }
+      // Can't assign pilot/crew/operator/dock without owning ships/agents/stations
+      if (agentState.ownedShipIds.length === 0) {
+        actions = actions.filter(a => a !== 'assign_pilot' && a !== 'add_crew' && a !== 'dock_ship');
+      }
+      if (agentState.ownedAgentIds.length === 0) {
+        actions = actions.filter(a => a !== 'assign_pilot' && a !== 'add_crew' && a !== 'assign_operator' && a !== 'train_agent' && a !== 'upgrade_agent');
+      }
+      if (agentState.ownedStationIds.length === 0) {
+        actions = actions.filter(a => a !== 'assign_operator' && a !== 'dock_ship');
+      }
       if (actions.length === 0) continue;
 
       const objectives = getPhaseObjectives(agentState.phase, agentState.role);
