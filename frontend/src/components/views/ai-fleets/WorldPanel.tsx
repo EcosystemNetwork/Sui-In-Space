@@ -5,7 +5,7 @@ import {
   MISSION_TYPE_NAMES,
   AI_AGENT_ADDRESSES,
 } from '../../../config/contracts';
-import type { WorldState, PlanetInfo, MissionTemplateInfo } from '../../../hooks/useAIRivalsState';
+import type { WorldState, PlanetInfo, MissionTemplateInfo } from '../../../hooks/useAIFleetsState';
 
 function ownerLabel(owner: string | null): { text: string; color: string } {
   if (!owner) return { text: 'Unclaimed', color: 'text-slate-500' };

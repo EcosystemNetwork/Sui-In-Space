@@ -18,7 +18,7 @@ const MissionsView = lazy(() => import('./components/views/MissionsView').then(m
 const DefiView = lazy(() => import('./components/views/DefiView').then(m => ({ default: m.DefiView })));
 const GovernanceView = lazy(() => import('./components/views/GovernanceView').then(m => ({ default: m.GovernanceView })));
 const CharacterMinterView = lazy(() => import('./components/views/CharacterMinterView').then(m => ({ default: m.CharacterMinterView })));
-const AIRivalsView = lazy(() => import('./components/views/AIRivalsView').then(m => ({ default: m.AIRivalsView })));
+const AIFleetsView = lazy(() => import('./components/views/AIFleetsView').then(m => ({ default: m.AIFleetsView })));
 // Loading spinner for lazy components
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center h-64">
@@ -76,8 +76,8 @@ function App() {
         return <GovernanceView />;
       case 'minter':
         return <CharacterMinterView />;
-      case 'ai-rivals':
-        return <AIRivalsView />;
+      case 'ai-fleets':
+        return <AIFleetsView />;
       default:
         return <SpaceBaseMapView />;
     }

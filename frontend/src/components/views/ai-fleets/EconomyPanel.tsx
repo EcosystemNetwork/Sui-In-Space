@@ -1,5 +1,5 @@
 import React from 'react';
-import type { WorldState } from '../../../hooks/useAIRivalsState';
+import type { WorldState } from '../../../hooks/useAIFleetsState';
 
 function StatRow({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (

@@ -357,7 +357,7 @@ async function queryWorldState(persistedState: PersistedStateJson | null): Promi
 
 // ── Main hook ────────────────────────────────────────────────────
 
-export function useAIRivalsState() {
+export function useAIFleetsState() {
   const [nexus7, setNexus7] = useState<FleetState>(EMPTY_FLEET);
   const [kraitX, setKraitX] = useState<FleetState>(EMPTY_FLEET);
   const [world, setWorld] = useState<WorldState>(EMPTY_WORLD);

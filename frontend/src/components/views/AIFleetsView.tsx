@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import {
-  useAIRivalsState,
+  useAIFleetsState,
   type FleetState,
   type AgentInfo,
   type ShipInfo,
   type StationInfo,
   type AgentPhaseState,
-} from '../../hooks/useAIRivalsState';
-import { ActivityFeed } from './ai-rivals/ActivityFeed';
-import { WorldPanel } from './ai-rivals/WorldPanel';
-import { EconomyPanel } from './ai-rivals/EconomyPanel';
+} from '../../hooks/useAIFleetsState';
+import { ActivityFeed } from './ai-fleets/ActivityFeed';
+import { WorldPanel } from './ai-fleets/WorldPanel';
+import { EconomyPanel } from './ai-fleets/EconomyPanel';
 
 // ── Utility ──────────────────────────────────────────────────────
 
@@ -228,12 +228,12 @@ const TABS: { id: Tab; label: string }[] = [
 
 // ── Main view ────────────────────────────────────────────────────
 
-export const AIRivalsView: React.FC = () => {
+export const AIFleetsView: React.FC = () => {
   const {
     nexus7, kraitX, world,
     nexus7Phase, kraitXPhase,
     loading, polling, lastUpdated, error, configured, refresh,
-  } = useAIRivalsState();
+  } = useAIFleetsState();
   const [activeTab, setActiveTab] = useState<Tab>('fleets');
 
   if (!configured) {
@@ -264,7 +264,7 @@ export const AIRivalsView: React.FC = () => {
       <div className="flex items-center justify-between p-4 rounded-lg bg-slate-900/80 border border-cyan-500/30">
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-red-400 bg-clip-text text-transparent">
-            AI RIVALS — LIVE
+            AI FLEETS — LIVE
           </h1>
           <span className={`inline-block w-2 h-2 rounded-full ${polling ? 'bg-green-400 animate-pulse' : 'bg-green-500'}`} />
         </div>
@@ -325,4 +325,4 @@ export const AIRivalsView: React.FC = () => {
   );
 };
 
-export default AIRivalsView;
+export default AIFleetsView;
