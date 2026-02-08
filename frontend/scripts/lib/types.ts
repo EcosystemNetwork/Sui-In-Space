@@ -155,6 +155,9 @@ export interface MissionTemplateInfo {
   mission_type: number;
   difficulty: number;
   min_agent_level: number;
+  min_processing: number;
+  min_mobility: number;
+  min_power: number;
   energy_cost: number;
   galactic_cost: number;
   duration_epochs: number;

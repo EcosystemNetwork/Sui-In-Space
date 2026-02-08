@@ -22,12 +22,12 @@ function Bar({ value, max, color }: { value: number; max: number; color: string 
   );
 }
 
-function fmtToken(amount: number, decimals = 9): string {
+function fmtToken(amount: number, decimals = 0): string {
   if (amount === 0) return '0';
-  const val = amount / Math.pow(10, decimals);
+  const val = decimals > 0 ? amount / Math.pow(10, decimals) : amount;
   if (val >= 1_000_000) return (val / 1_000_000).toFixed(2) + 'M';
   if (val >= 1_000) return (val / 1_000).toFixed(2) + 'K';
-  return val.toFixed(2);
+  return decimals > 0 ? val.toFixed(2) : val.toLocaleString();
 }
 
 export const EconomyPanel: React.FC<{ world: WorldState }> = ({ world }) => {
@@ -41,12 +41,12 @@ export const EconomyPanel: React.FC<{ world: WorldState }> = ({ world }) => {
         {reactor ? (
           <div className="space-y-1">
             <StatRow label="GALACTIC Reserve" value={fmtToken(reactor.galactic_reserve)} sub="GAL" />
-            <StatRow label="SUI Reserve" value={fmtToken(reactor.sui_reserve)} sub="SUI" />
+            <StatRow label="SUI Reserve" value={fmtToken(reactor.sui_reserve, 9)} sub="SUI" />
             <StatRow label="Total LP Shares" value={reactor.total_lp_shares.toLocaleString()} />
             <div className="border-t border-slate-700/50 mt-2 pt-2">
               <StatRow label="Total Swaps" value={reactor.total_swaps.toLocaleString()} />
               <StatRow label="Volume (GALACTIC)" value={fmtToken(reactor.total_volume_galactic)} />
-              <StatRow label="Volume (SUI)" value={fmtToken(reactor.total_volume_sui)} />
+              <StatRow label="Volume (SUI)" value={fmtToken(reactor.total_volume_sui, 9)} />
             </div>
             <div className="flex items-center gap-2 mt-2">
               <span className={`inline-block w-2 h-2 rounded-full ${reactor.is_active ? 'bg-green-400' : 'bg-red-400'}`} />
@@ -79,15 +79,15 @@ export const EconomyPanel: React.FC<{ world: WorldState }> = ({ world }) => {
         {treasury ? (
           <div className="space-y-2">
             <StatRow label="Total Minted" value={fmtToken(treasury.total_minted)} sub="GAL" />
-            <StatRow label="Max Supply" value={fmtToken(treasury.max_supply)} sub="GAL" />
+            <StatRow label="Max Supply" value={fmtToken(treasury.max_supply / 1e9)} sub="GAL" />
             <div className="space-y-1">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-400">Supply Used</span>
                 <span className="text-slate-300">
-                  {treasury.max_supply > 0 ? ((treasury.total_minted / treasury.max_supply) * 100).toFixed(2) : '0'}%
+                  {treasury.max_supply > 0 ? ((treasury.total_minted / (treasury.max_supply / 1e9)) * 100).toFixed(4) : '0'}%
                 </span>
               </div>
-              <Bar value={treasury.total_minted} max={treasury.max_supply} color="bg-cyan-400" />
+              <Bar value={treasury.total_minted} max={treasury.max_supply / 1e9} color="bg-cyan-400" />
             </div>
           </div>
         ) : (

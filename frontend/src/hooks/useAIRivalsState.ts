@@ -264,8 +264,11 @@ async function queryWorldState(persistedState: PersistedStateJson | null): Promi
     const f = await fetchObjectFields(id);
     if (!f) continue;
     const ownerField = f.owner;
-    const owner = ownerField && typeof ownerField === 'object' && Object.keys(ownerField).length > 0
-      ? String(Object.values(ownerField)[0]) : null;
+    const ZERO_ADDR = '0x0000000000000000000000000000000000000000000000000000000000000000';
+    const owner = ownerField && typeof ownerField === 'string' && ownerField !== ZERO_ADDR
+      ? ownerField
+      : (ownerField && typeof ownerField === 'object' && Object.keys(ownerField).length > 0
+        ? String(Object.values(ownerField)[0]) : null);
     world.planets.push({
       id, name: f.name || 'Unknown',
       planet_type: Number(f.planet_type || 0),

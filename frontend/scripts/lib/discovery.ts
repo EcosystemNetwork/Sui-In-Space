@@ -97,7 +97,8 @@ export async function discoverSharedObjects(
       const objType = (change as any).objectType || '';
       const objId = (change as any).objectId || '';
 
-      // Shared objects
+      // Shared objects — only match current package
+      if (!objType.includes(packageId)) continue;
       if (objType.includes('::galactic_token::GalacticTreasury')) {
         state.sharedObjects.treasuryId = objId;
       } else if (objType.includes('::missions::MissionRegistry')) {

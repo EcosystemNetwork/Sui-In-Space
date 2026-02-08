@@ -9,8 +9,10 @@
  * Usage: pnpm agents          (continuous mode)
  *        pnpm agents          AGENT_MAX_ROUNDS=20 for limited rounds
  *
- * Requires in ../../.env:  PRIVATE_KEY, PRIVATE_KEY_2, ZAI_API_KEY
+ * Requires in ../../.env:  PRIVATE_KEY, PRIVATE_KEY_2, ZAI_API_KEY, OPENCLAW_GATEWAY_TOKEN
  * Requires in ../.env:     VITE_PACKAGE_ID
+ * Requires:  AGENT_AI_MODEL (OpenClaw model, e.g. zai/glm-4.7-flash)
+ * Optional:  AGENT_PREMINT_GALACTIC, AGENT_MAX_ROUNDS
  */
 
 import { resolve, dirname } from 'path';
@@ -52,6 +54,7 @@ const MAX_ROUNDS = Number(process.env.AGENT_MAX_ROUNDS) || 0; // 0 = unlimited
 
 if (!PRIVATE_KEY) { console.error('Missing PRIVATE_KEY in ../../.env'); process.exit(1); }
 if (!ZAI_API_KEY) { console.error('Missing ZAI_API_KEY in ../../.env'); process.exit(1); }
+if (!AGENT_AI_MODEL) { console.error('Missing AGENT_AI_MODEL — set it in .env or ../../.env (e.g. AGENT_AI_MODEL=zai/glm-4.7-flash)'); process.exit(1); }
 if (!PACKAGE_ID || PACKAGE_ID === '0x0') {
   console.error('Missing VITE_PACKAGE_ID in frontend/.env — run `pnpm deploy` first.');
   process.exit(1);
@@ -91,9 +94,12 @@ const client = new SuiJsonRpcClient({
   network: 'testnet',
 });
 
+const OPENCLAW_BASE_URL = process.env.OPENCLAW_BASE_URL || 'http://localhost:18789/v1';
+const OPENCLAW_GATEWAY_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN || ZAI_API_KEY;
+const AGENT_AI_MODEL = process.env.AGENT_AI_MODEL!;
 const ai = new OpenAI({
-  apiKey: ZAI_API_KEY,
-  baseURL: 'https://open.bigmodel.cn/api/paas/v4/',
+  apiKey: OPENCLAW_GATEWAY_TOKEN,
+  baseURL: OPENCLAW_BASE_URL,
 });
 
 // ── Agent profiles ───────────────────────────────────────────────
@@ -139,7 +145,10 @@ async function queryGameState(ownerAddress: string): Promise<GameState> {
       const fields = content && 'fields' in content ? (content as any).fields : null;
       if (!fields) continue;
 
-      if (type.includes('::agent::Agent')) {
+      // Only match direct objects from the current package (skip Display<T>, wrappers, etc.)
+      if (!type.startsWith(PACKAGE_ID)) continue;
+
+      if (type === `${PACKAGE_ID}::agent::Agent`) {
         state.agents.push({
           id: obj.data!.objectId,
           name: fields.name || 'Unknown',
@@ -157,7 +166,7 @@ async function queryGameState(ownerAddress: string): Promise<GameState> {
           on_mission: fields.current_mission !== null && fields.current_mission !== undefined &&
             (typeof fields.current_mission === 'object' ? Object.keys(fields.current_mission).length > 0 : false),
         });
-      } else if (type.includes('::ship::Ship')) {
+      } else if (type === `${PACKAGE_ID}::ship::Ship`) {
         const pilotField = fields.pilot;
         const pilotId = pilotField && typeof pilotField === 'object' && Object.keys(pilotField).length > 0
           ? String(Object.values(pilotField)[0]) : null;
@@ -176,7 +185,7 @@ async function queryGameState(ownerAddress: string): Promise<GameState> {
           pilot: pilotId,
           is_docked: Boolean(fields.is_docked),
         });
-      } else if (type.includes('::station::Station')) {
+      } else if (type === `${PACKAGE_ID}::station::Station`) {
         state.stations.push({
           id: obj.data!.objectId,
           name: fields.name || 'Unknown',
@@ -206,8 +215,11 @@ async function queryPlanets(planetIds: string[]): Promise<PlanetInfo[]> {
       const fields = obj.data?.content && 'fields' in obj.data.content ? (obj.data.content as any).fields : null;
       if (!fields) continue;
       const ownerField = fields.owner;
-      const owner = ownerField && typeof ownerField === 'object' && Object.keys(ownerField).length > 0
-        ? String(Object.values(ownerField)[0]) : null;
+      const ZERO_ADDR = '0x0000000000000000000000000000000000000000000000000000000000000000';
+      const owner = ownerField && typeof ownerField === 'string' && ownerField !== ZERO_ADDR
+        ? ownerField
+        : (ownerField && typeof ownerField === 'object' && Object.keys(ownerField).length > 0
+          ? String(Object.values(ownerField)[0]) : null);
       planets.push({
         id,
         name: fields.name || 'Unknown',
@@ -248,6 +260,9 @@ async function queryMissionTemplates(templateIds: string[]): Promise<MissionTemp
         mission_type: Number(fields.mission_type || 0),
         difficulty: Number(fields.difficulty || 1),
         min_agent_level: Number(fields.min_agent_level || 0),
+        min_processing: Number(fields.min_processing || 0),
+        min_mobility: Number(fields.min_mobility || 0),
+        min_power: Number(fields.min_power || 0),
         energy_cost: Number(fields.energy_cost || 0),
         galactic_cost: Number(fields.galactic_cost || 0),
         duration_epochs: Number(fields.duration_epochs || 1),
@@ -367,12 +382,18 @@ async function executeDecision(
 
     case 'colonize_planet': {
       if (!isValidObjectId(decision.planet_id)) throw new Error(`Invalid planet_id: ${String(decision.planet_id).slice(0, 40)}... — must be a real object ID from the state`);
+      // Pre-check: verify planet is unclaimed before sending tx
+      const [planetCheck] = await queryPlanets([decision.planet_id]);
+      if (planetCheck?.owner) throw new Error(`Planet ${decision.planet_id.slice(0, 10)}... is already colonized by ${planetCheck.owner.slice(0, 10)}...`);
       const digest = await exec.colonizePlanet(ctx, decision.planet_id);
       return { digest, description: `Colonized planet ${decision.planet_id.slice(0, 10)}...` };
     }
 
     case 'extract_resources': {
       if (!isValidObjectId(decision.planet_id)) throw new Error(`Invalid planet_id: ${String(decision.planet_id).slice(0, 40)}...`);
+      // Pre-check ownership
+      const [extractPlanet] = await queryPlanets([decision.planet_id]);
+      if (extractPlanet && extractPlanet.owner !== addr) throw new Error(`Planet ${decision.planet_id.slice(0, 10)}... is not yours (owner: ${extractPlanet.owner?.slice(0, 10) || 'none'}...)`);
       const epoch = await getCurrentEpoch();
       const digest = await exec.extractResources(ctx, decision.planet_id, epoch);
       return { digest, description: `Extracted resources from planet` };
@@ -380,6 +401,9 @@ async function executeDecision(
 
     case 'upgrade_defense': {
       if (!isValidObjectId(decision.planet_id)) throw new Error(`Invalid planet_id: ${String(decision.planet_id).slice(0, 40)}...`);
+      // Pre-check ownership
+      const [defensePlanet] = await queryPlanets([decision.planet_id]);
+      if (defensePlanet && defensePlanet.owner !== addr) throw new Error(`Planet ${decision.planet_id.slice(0, 10)}... is not yours`);
       const digest = await exec.upgradeDefense(ctx, decision.planet_id, u64(decision.amount) || 1);
       return { digest, description: `Upgraded planet defense by ${decision.amount}` };
     }
@@ -433,13 +457,26 @@ async function executeDecision(
       // Look up actual agent stats from game state
       const ownGameStateForMission = await queryGameState(addr);
       const agentData = ownGameStateForMission.agents.find(a => a.id === decision.agent_id);
-      const stats = agentData
-        ? { level: agentData.level, processing: agentData.processing, mobility: agentData.mobility, power: agentData.power, luck: agentData.luck }
-        : { level: 1, processing: 10, mobility: 10, power: 10, luck: 5 };
+      if (!agentData) throw new Error(`Agent ${decision.agent_id.slice(0, 10)}... not found in your roster`);
+      const stats = { level: agentData.level, processing: agentData.processing, mobility: agentData.mobility, power: agentData.power, luck: agentData.luck };
+      // Pre-validate eligibility against template requirements
+      const [templateInfo] = await queryMissionTemplates([decision.template_id]);
+      if (templateInfo) {
+        if (stats.level < templateInfo.min_agent_level) throw new Error(`Agent level ${stats.level} < required ${templateInfo.min_agent_level}`);
+        if (stats.processing < templateInfo.min_processing) throw new Error(`Agent processing ${stats.processing} < required ${templateInfo.min_processing}`);
+        if (stats.mobility < templateInfo.min_mobility) throw new Error(`Agent mobility ${stats.mobility} < required ${templateInfo.min_mobility}`);
+        if (stats.power < templateInfo.min_power) throw new Error(`Agent power ${stats.power} < required ${templateInfo.min_power}`);
+      }
+      // Check GALACTIC payment
+      const missionCoins = await client.getCoins({ owner: addr, coinType: `${PACKAGE_ID}::galactic_token::GALACTIC_TOKEN` });
+      if (missionCoins.data.length === 0 && templateInfo && templateInfo.galactic_cost > 0) {
+        throw new Error(`No GALACTIC coins to pay mission cost of ${templateInfo.galactic_cost}`);
+      }
+      const galacticCost = templateInfo?.galactic_cost || 0;
       const { digest } = await exec.startMission(
         ctx, registryId, decision.template_id,
         decision.agent_id, decision.ship_id || null,
-        stats, 0, epoch,
+        stats, galacticCost, epoch,
       );
       return { digest, description: `Started mission on template ${decision.template_id.slice(0, 10)}...` };
     }
@@ -473,13 +510,19 @@ async function executeDecision(
     case 'add_liquidity': {
       const reactorId = persistedState.sharedObjects.reactorId;
       if (!reactorId) throw new Error('Reactor not found');
+      // Check available GALACTIC balance and cap amount
+      const lpCoins = await client.getCoins({ owner: addr, coinType: `${PACKAGE_ID}::galactic_token::GALACTIC_TOKEN` });
+      const galBalance = lpCoins.data.reduce((sum, c) => sum + BigInt(c.balance), 0n);
+      // Enforce minimum: sqrt(galactic * sui) must be >= 1000 (MINIMUM_LIQUIDITY)
+      const galAmt = Math.min(Number(galBalance), Math.max(Number(decision.galactic_amount), 1_000));
+      const suiAmt = Math.max(Number(decision.sui_amount), 1_000);
+      if (galAmt < 1_000) throw new Error(`Insufficient GALACTIC for liquidity (have ${galBalance}, need ≥1000)`);
       const epoch = await getCurrentEpoch();
       const { digest, receiptId } = await exec.addLiquidity(
-        ctx, reactorId,
-        Number(decision.galactic_amount), Number(decision.sui_amount), epoch,
+        ctx, reactorId, galAmt, suiAmt, epoch,
       );
       if (receiptId) agentState.lpReceiptIds.push(receiptId);
-      return { digest, description: `Added liquidity: ${decision.galactic_amount} GALACTIC + ${decision.sui_amount} SUI` };
+      return { digest, description: `Added liquidity: ${galAmt} GALACTIC + ${suiAmt} SUI` };
     }
 
     case 'swap_galactic_for_sui': {
@@ -599,12 +642,27 @@ function parseAIResponse(raw: string): any {
     return JSON.parse(raw);
   } catch { /* fallthrough */ }
 
-  // Try to find JSON object in the response
-  const match = raw.match(/\{[\s\S]*\}/);
-  if (match) {
+  // Strip markdown code fences (```json ... ```)
+  const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenceMatch) {
     try {
-      return JSON.parse(match[0]);
+      return JSON.parse(fenceMatch[1].trim());
     } catch { /* fallthrough */ }
+  }
+
+  // Try to find the first balanced JSON object
+  const start = raw.indexOf('{');
+  if (start !== -1) {
+    let depth = 0;
+    for (let i = start; i < raw.length; i++) {
+      if (raw[i] === '{') depth++;
+      else if (raw[i] === '}') depth--;
+      if (depth === 0) {
+        try {
+          return JSON.parse(raw.slice(start, i + 1));
+        } catch { break; }
+      }
+    }
   }
 
   throw new Error('Could not parse AI response as JSON');
@@ -661,6 +719,46 @@ async function main() {
       persistedState.kraitX.roundsInPhase = 0;
     }
   }
+
+  // ── Sync owned objects from chain (replaces cached lists with chain truth) ──
+  console.log('\n  Syncing owned objects from chain...');
+  for (const [key, agentState] of [['nexus7', persistedState.nexus7], ['kraitX', persistedState.kraitX]] as const) {
+    const gameState = await queryGameState(agentState.address);
+    agentState.ownedAgentIds = gameState.agents.map(a => a.id);
+    agentState.ownedShipIds = gameState.ships.map(s => s.id);
+    agentState.ownedStationIds = gameState.stations.map(s => s.id);
+    console.log(`  ${agentState.name}: ${agentState.ownedAgentIds.length} agents, ${agentState.ownedShipIds.length} ships, ${agentState.ownedStationIds.length} stations on-chain`);
+  }
+
+  // ── Pre-game: ensure GALACTIC tokens exist (test mode only) ──
+  const PREMINT = process.env.AGENT_PREMINT_GALACTIC === 'true';
+  const treasuryId = persistedState.sharedObjects.treasuryId;
+  if (PREMINT && treasuryId) {
+    const MINT_AMOUNT = 1_000_000; // 1M GALACTIC per agent
+    const ctx1 = { client, signer: keypair1, packageId: PACKAGE_ID };
+    for (const [addr, label] of [[address1, 'NEXUS-7'], [address2, 'KRAIT-X']] as const) {
+      const galactic = await client.getCoins({
+        owner: addr,
+        coinType: `${PACKAGE_ID}::galactic_token::GALACTIC_TOKEN`,
+      });
+      if (galactic.data.length === 0) {
+        console.log(`  Minting ${MINT_AMOUNT} GALACTIC for ${label}...`);
+        try {
+          const digest = await exec.mintGalactic(ctx1, treasuryId, MINT_AMOUNT, addr);
+          console.log(`  Minted! Tx: ${digest}`);
+          await sleep(2000);
+        } catch (e: any) {
+          console.error(`  Failed to mint GALACTIC for ${label}: ${e.message?.slice(0, 150)}`);
+        }
+      } else {
+        const total = galactic.data.reduce((sum, c) => sum + BigInt(c.balance), 0n);
+        console.log(`  ${label} has ${total} GALACTIC`);
+      }
+    }
+  } else if (PREMINT) {
+    console.log('  Warning: GalacticTreasury not found — skipping pre-game mint');
+  }
+
   savePersistedState(persistedState);
 
   let totalRound = 0;
@@ -723,6 +821,17 @@ async function main() {
       if (agentState.ownedStationIds.length === 0) {
         actions = actions.filter(a => a !== 'assign_operator' && a !== 'dock_ship');
       }
+      // Filter actions that require GALACTIC coins when agent has none
+      const galacticCoins = await client.getCoins({
+        owner: agentState.address,
+        coinType: `${PACKAGE_ID}::galactic_token::GALACTIC_TOKEN`,
+      });
+      if (galacticCoins.data.length === 0) {
+        actions = actions.filter(a =>
+          a !== 'create_proposal' && a !== 'add_liquidity' &&
+          a !== 'swap_galactic_for_sui' && a !== 'fund_reward_pool'
+        );
+      }
       if (actions.length === 0) continue;
 
       const objectives = getPhaseObjectives(agentState.phase, agentState.role);
@@ -732,6 +841,45 @@ async function main() {
       const rivalGameState = await queryGameState(rivalState.address);
       const planets = await queryPlanets(persistedState.planetIds);
       const templates = await queryMissionTemplates(persistedState.missionTemplateIds);
+
+      // Can't colonize if all planets are already owned
+      if (planets.length > 0 && planets.every(p => p.owner)) {
+        actions = actions.filter(a => a !== 'colonize_planet');
+      }
+      // DeFi prerequisites: need reactor for liquidity/swaps, need pool for insurance
+      if (!persistedState.sharedObjects.reactorId) {
+        actions = actions.filter(a => a !== 'add_liquidity' && a !== 'swap_galactic_for_sui' && a !== 'swap_sui_for_galactic');
+      } else if (actions.some(a => a === 'swap_galactic_for_sui' || a === 'swap_sui_for_galactic')) {
+        // Can't swap against an empty pool — check reactor reserves
+        try {
+          const rObj = await client.getObject({ id: persistedState.sharedObjects.reactorId, options: { showContent: true } });
+          const rFields = rObj.data?.content && 'fields' in rObj.data.content ? (rObj.data.content as any).fields : null;
+          const galReserve = Number(rFields?.galactic_reserve?.fields?.balance ?? rFields?.galactic_reserve ?? 0);
+          const suiReserve = Number(rFields?.sui_reserve?.fields?.balance ?? rFields?.sui_reserve ?? 0);
+          if (galReserve === 0 || suiReserve === 0) {
+            actions = actions.filter(a => a !== 'swap_galactic_for_sui' && a !== 'swap_sui_for_galactic');
+          }
+        } catch { /* proceed without filtering */ }
+      }
+      if (!persistedState.sharedObjects.insurancePoolId) {
+        actions = actions.filter(a => a !== 'purchase_insurance');
+      }
+      // One-time setup: don't offer if already created
+      if (persistedState.sharedObjects.reactorId) {
+        actions = actions.filter(a => a !== 'create_and_share_reactor');
+      }
+      if (persistedState.sharedObjects.insurancePoolId) {
+        actions = actions.filter(a => a !== 'create_and_share_insurance_pool');
+      }
+      // Can't start missions without templates or GALACTIC for payment
+      if (templates.length === 0) {
+        actions = actions.filter(a => a !== 'start_mission' && a !== 'complete_mission');
+      }
+      // No planets to extract/upgrade/colonize if none discovered
+      if (planets.length === 0) {
+        actions = actions.filter(a => a !== 'colonize_planet' && a !== 'extract_resources' && a !== 'upgrade_defense');
+      }
+      if (actions.length === 0) continue;
 
       // Build prompt
       const systemPrompt = buildSystemPrompt(profile, rivalName, rivalState.address, agentState.phase, objectives, actions);
@@ -745,7 +893,7 @@ async function main() {
       let decision: any;
       try {
         const completion = await ai.chat.completions.create({
-          model: 'GLM-4.7-Flash',
+          model: AGENT_AI_MODEL,
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt },
@@ -761,7 +909,7 @@ async function main() {
       } catch (e: any) {
         const code = e.code || e.status;
         if (code === '1113' || e.status === 429) {
-          console.error(`  ${agentName}: Zhipu AI insufficient balance`);
+          console.error(`  ${agentName}: AI rate-limited or billing error (code=${code})`);
         } else {
           console.error(`  ${agentName}: AI error:`, e.message?.slice(0, 200));
         }

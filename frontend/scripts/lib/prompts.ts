@@ -154,7 +154,7 @@ function fmtPlanet(p: PlanetInfo): string {
 
 function fmtMission(m: MissionTemplateInfo): string {
   const type = MISSION_TYPE_NAMES[m.mission_type] || String(m.mission_type);
-  return `  - ${m.name} [${m.id}] (${type}, diff:${m.difficulty}, reward:${m.base_reward}, xp:${m.experience_reward}) completed:${m.times_completed}x`;
+  return `  - ${m.name} [${m.id}] (${type}, diff:${m.difficulty}, reward:${m.base_reward}, xp:${m.experience_reward}, cost:${m.galactic_cost}) req:Lv${m.min_agent_level}/proc${m.min_processing}/mob${m.min_mobility}/pow${m.min_power} completed:${m.times_completed}x`;
 }
 
 function fmtList<T>(items: T[], formatter: (i: T) => string): string {

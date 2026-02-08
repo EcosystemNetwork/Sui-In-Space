@@ -48,7 +48,7 @@ const MILITARY_PLAYER_ACTIONS: ActionName[] = [
 ];
 
 const GOVERNANCE_ACTIONS: ActionName[] = [
-  'create_voting_power', 'create_proposal', 'cast_vote',
+  'create_voting_power', 'create_proposal', 'cast_vote', 'mint_galactic',
 ];
 
 const SUSTAIN_ALL: ActionName[] = [
@@ -180,7 +180,9 @@ export function getPhaseObjectives(phase: Phase, role: AgentRole): string {
     case 'GOVERNANCE':
       return 'Create voting power, submit proposals, and cast votes on governance issues.';
     case 'SUSTAIN':
-      return 'All actions available. Choose strategically based on the current state of the universe. Expand territory, run missions, trade, and govern.';
+      return role === 'game_master'
+        ? 'All actions available. PRIORITIES: (1) Add liquidity to the reactor (add_liquidity), (2) Fund the reward pool, (3) Create governance proposals, (4) Run missions, (5) Expand fleet/territory. You MUST use economy actions (add_liquidity, swap, mint_galactic) and governance actions (create_voting_power, create_proposal) — do NOT only train agents or build ships.'
+        : 'All actions available. PRIORITIES: (1) Add liquidity to the reactor (add_liquidity), (2) Start and complete missions, (3) Make swaps (swap_galactic_for_sui, swap_sui_for_galactic), (4) Purchase insurance, (5) Vote on proposals. You MUST use economy actions and governance — do NOT only train agents or build ships.';
     default:
       return 'Take your next action.';
   }
