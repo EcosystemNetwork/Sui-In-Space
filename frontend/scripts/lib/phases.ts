@@ -21,19 +21,20 @@ export type ActionName =
   | 'mint_galactic' | 'create_and_share_reactor' | 'create_and_share_insurance_pool'
   | 'add_liquidity' | 'swap_galactic_for_sui' | 'swap_sui_for_galactic' | 'purchase_insurance'
   | 'assign_operator' | 'dock_ship'
-  | 'create_voting_power' | 'create_proposal' | 'cast_vote';
+  | 'create_voting_power' | 'create_proposal' | 'cast_vote'
+  | 'finalize_proposal' | 'execute_proposal';
 
 const GENESIS_ACTIONS: ActionName[] = ['mint_agent', 'build_ship'];
 
 const WORLD_BUILD_ACTIONS: ActionName[] = ['discover_planet'];
 const COLONIZE_ACTIONS: ActionName[] = ['colonize_planet', 'extract_resources', 'upgrade_defense'];
 
-const CONTENT_ACTIONS: ActionName[] = ['create_mission_template', 'mint_galactic', 'fund_reward_pool'];
+const CONTENT_ACTIONS: ActionName[] = ['create_mission_template', 'fund_reward_pool'];
 const MISSIONS_ACTIONS: ActionName[] = ['start_mission', 'complete_mission'];
 
 const ECONOMY_GM_ACTIONS: ActionName[] = [
   'create_and_share_reactor', 'create_and_share_insurance_pool',
-  'mint_galactic', 'add_liquidity',
+  'add_liquidity',
 ];
 const ECONOMY_PLAYER_ACTIONS: ActionName[] = [
   'add_liquidity', 'swap_galactic_for_sui', 'swap_sui_for_galactic', 'purchase_insurance',
@@ -48,7 +49,8 @@ const MILITARY_PLAYER_ACTIONS: ActionName[] = [
 ];
 
 const GOVERNANCE_ACTIONS: ActionName[] = [
-  'create_voting_power', 'create_proposal', 'cast_vote', 'mint_galactic',
+  'create_voting_power', 'create_proposal', 'cast_vote',
+  'finalize_proposal', 'execute_proposal',
 ];
 
 const SUSTAIN_ALL: ActionName[] = [
@@ -56,9 +58,10 @@ const SUSTAIN_ALL: ActionName[] = [
   'assign_pilot', 'add_crew', 'discover_planet', 'colonize_planet',
   'extract_resources', 'upgrade_defense',
   'create_mission_template', 'fund_reward_pool', 'start_mission', 'complete_mission',
-  'mint_galactic', 'add_liquidity', 'swap_galactic_for_sui', 'swap_sui_for_galactic',
+  'add_liquidity', 'swap_galactic_for_sui', 'swap_sui_for_galactic',
   'purchase_insurance', 'assign_operator', 'dock_ship',
   'create_voting_power', 'create_proposal', 'cast_vote',
+  'finalize_proposal', 'execute_proposal',
 ];
 
 export function getAvailableActions(phase: Phase, role: AgentRole): ActionName[] {
@@ -167,11 +170,11 @@ export function getPhaseObjectives(phase: Phase, role: AgentRole): string {
         : 'KRAIT-X is colonizing planets.';
     case 'CONTENT':
       return role === 'game_master'
-        ? 'Create 3-5 diverse mission templates (DataHeist, Espionage, Combat, Exploration). Mint GALACTIC tokens and fund the reward pool.'
+        ? 'Create 3-5 diverse mission templates (DataHeist, Espionage, Combat, Exploration). Fund the reward pool with GALACTIC.'
         : 'Start and complete available missions to earn rewards and experience.';
     case 'ECONOMY':
       return role === 'game_master'
-        ? 'Create the Energy Reactor (liquidity pool) and Insurance Pool. Mint GALACTIC and add initial liquidity.'
+        ? 'Create the Energy Reactor (liquidity pool) and Insurance Pool. Add initial liquidity.'
         : 'Participate in DeFi: add liquidity, make swaps, purchase insurance.';
     case 'MILITARY':
       return role === 'game_master'
@@ -181,7 +184,7 @@ export function getPhaseObjectives(phase: Phase, role: AgentRole): string {
       return 'Create voting power, submit proposals, and cast votes on governance issues.';
     case 'SUSTAIN':
       return role === 'game_master'
-        ? 'All actions available. PRIORITIES: (1) Add liquidity to the reactor (add_liquidity), (2) Fund the reward pool, (3) Create governance proposals, (4) Run missions, (5) Expand fleet/territory. You MUST use economy actions (add_liquidity, swap, mint_galactic) and governance actions (create_voting_power, create_proposal) — do NOT only train agents or build ships.'
+        ? 'All actions available. PRIORITIES: (1) Add liquidity to the reactor (add_liquidity), (2) Fund the reward pool, (3) Create governance proposals, (4) Run missions, (5) Expand fleet/territory. You MUST use economy actions (add_liquidity, swap) and governance actions (create_voting_power, create_proposal) — do NOT only train agents or build ships.'
         : 'All actions available. PRIORITIES: (1) Add liquidity to the reactor (add_liquidity), (2) Start and complete missions, (3) Make swaps (swap_galactic_for_sui, swap_sui_for_galactic), (4) Purchase insurance, (5) Vote on proposals. You MUST use economy actions and governance — do NOT only train agents or build ships.';
     default:
       return 'Take your next action.';

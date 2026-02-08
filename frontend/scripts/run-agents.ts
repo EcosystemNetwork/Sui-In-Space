@@ -24,7 +24,7 @@ import { SuiJsonRpcClient, getJsonRpcFullnodeUrl } from '@mysten/sui/jsonRpc';
 import { Transaction } from '@mysten/sui/transactions';
 import OpenAI from 'openai';
 
-import type { AgentProfile, AgentState, GameState, PlanetInfo, MissionTemplateInfo, PersistedState } from './lib/types.js';
+import type { AgentProfile, AgentState, GameState, PlanetInfo, MissionTemplateInfo, PersistedState, ProposalInfo, ReactorInfo } from './lib/types.js';
 import {
   AGENT_TYPES, AGENT_CLASSES, SHIP_CLASSES, STATION_TYPES,
   PLANET_TYPES, RESOURCE_TYPES, MISSION_TYPES, PROPOSAL_TYPES,
@@ -54,7 +54,7 @@ const MAX_ROUNDS = Number(process.env.AGENT_MAX_ROUNDS) || 0; // 0 = unlimited
 
 if (!PRIVATE_KEY) { console.error('Missing PRIVATE_KEY in ../../.env'); process.exit(1); }
 if (!ZAI_API_KEY) { console.error('Missing ZAI_API_KEY in ../../.env'); process.exit(1); }
-if (!AGENT_AI_MODEL) { console.error('Missing AGENT_AI_MODEL — set it in .env or ../../.env (e.g. AGENT_AI_MODEL=zai/glm-4.7-flash)'); process.exit(1); }
+if (!process.env.AGENT_AI_MODEL) { console.error('Missing AGENT_AI_MODEL — set it in .env or ../../.env (e.g. AGENT_AI_MODEL=zai/glm-4.7-flash)'); process.exit(1); }
 if (!PACKAGE_ID || PACKAGE_ID === '0x0') {
   console.error('Missing VITE_PACKAGE_ID in frontend/.env — run `pnpm deploy` first.');
   process.exit(1);
@@ -276,6 +276,54 @@ async function queryMissionTemplates(templateIds: string[]): Promise<MissionTemp
   return templates;
 }
 
+// ── Query proposals ──────────────────────────────────────────────
+async function queryProposals(proposalIds: string[]): Promise<ProposalInfo[]> {
+  const proposals: ProposalInfo[] = [];
+  for (const id of proposalIds) {
+    try {
+      const obj = await client.getObject({ id, options: { showContent: true } });
+      const fields = obj.data?.content && 'fields' in obj.data.content ? (obj.data.content as any).fields : null;
+      if (!fields) continue;
+      proposals.push({
+        id,
+        title: fields.title || '',
+        description: fields.description || '',
+        proposal_type: Number(fields.proposal_type ?? 0),
+        target_module: fields.target_module || '',
+        target_function: fields.target_function || '',
+        parameters: Array.isArray(fields.parameters) ? fields.parameters.map(Number) : [],
+        votes_for: Number(fields.votes_for ?? 0),
+        votes_against: Number(fields.votes_against ?? 0),
+        status: Number(fields.status ?? 0),
+        created_at: Number(fields.created_at ?? 0),
+        voting_ends_at: Number(fields.voting_ends_at ?? 0),
+        execution_after: Number(fields.execution_after ?? 0),
+      });
+    } catch { /* skip missing objects */ }
+  }
+  return proposals;
+}
+
+// ── Query reactor state ─────────────────────────────────────────
+async function queryReactorState(reactorId: string): Promise<ReactorInfo | null> {
+  try {
+    const obj = await client.getObject({ id: reactorId, options: { showContent: true } });
+    const fields = obj.data?.content && 'fields' in obj.data.content ? (obj.data.content as any).fields : null;
+    if (!fields) return null;
+    return {
+      id: reactorId,
+      galactic_reserve: Number(fields.galactic_reserve?.fields?.balance ?? fields.galactic_reserve ?? 0),
+      sui_reserve: Number(fields.sui_reserve?.fields?.balance ?? fields.sui_reserve ?? 0),
+      total_lp_shares: Number(fields.total_lp_shares ?? 0),
+      swap_fee_bps: Number(fields.swap_fee_bps ?? 0),
+      total_swaps: Number(fields.total_swaps ?? 0),
+      total_volume_galactic: Number(fields.total_volume_galactic ?? 0),
+      total_volume_sui: Number(fields.total_volume_sui ?? 0),
+      is_active: fields.is_active !== false,
+    };
+  } catch { return null; }
+}
+
 // ── Fund KRAIT-X ─────────────────────────────────────────────────
 async function fundSecondWallet(): Promise<void> {
   const coins = await client.getCoins({ owner: address2 });
@@ -423,9 +471,9 @@ async function executeDecision(
         minPower: Number(decision.min_power) || 0,
         requiredShipClass: reqShipClass,
         energyCost: Number(decision.energy_cost) || 0,
-        galacticCost: Number(decision.galactic_cost) || 0,
+        galacticCost: toRaw(Number(decision.galactic_cost) || 0),
         durationEpochs: Number(decision.duration_epochs) || 1,
-        baseReward: Number(decision.base_reward) || 100,
+        baseReward: toRaw(Number(decision.base_reward) || 100),
         experienceReward: Number(decision.experience_reward) || 50,
         lootChance: Number(decision.loot_chance) || 20,
       });
@@ -437,14 +485,16 @@ async function executeDecision(
       const treasuryId = persistedState.sharedObjects.treasuryId;
       if (!treasuryId) throw new Error('GalacticTreasury not found');
       const recipient = decision.recipient || addr;
-      const digest = await exec.mintGalactic(ctx, treasuryId, Number(decision.amount), recipient);
+      const rawAmount = toRaw(Number(decision.amount));
+      const digest = await exec.mintGalactic(ctx, treasuryId, rawAmount, recipient);
       return { digest, description: `Minted ${decision.amount} GALACTIC to ${recipient.slice(0, 10)}...` };
     }
 
     case 'fund_reward_pool': {
       const registryId = persistedState.sharedObjects.missionRegistryId;
       if (!registryId) throw new Error('MissionRegistry not found');
-      const digest = await exec.fundRewardPool(ctx, registryId, Number(decision.amount));
+      const rawAmount = toRaw(Number(decision.amount));
+      const digest = await exec.fundRewardPool(ctx, registryId, rawAmount);
       return { digest, description: `Funded reward pool with ${decision.amount} GALACTIC` };
     }
 
@@ -513,9 +563,12 @@ async function executeDecision(
       // Check available GALACTIC balance and cap amount
       const lpCoins = await client.getCoins({ owner: addr, coinType: `${PACKAGE_ID}::galactic_token::GALACTIC_TOKEN` });
       const galBalance = lpCoins.data.reduce((sum, c) => sum + BigInt(c.balance), 0n);
+      // Convert human-readable amounts to raw units (9 decimals)
+      const rawGalAmt = toRaw(Number(decision.galactic_amount));
+      const rawSuiAmt = toRaw(Number(decision.sui_amount));
       // Enforce minimum: sqrt(galactic * sui) must be >= 1000 (MINIMUM_LIQUIDITY)
-      const galAmt = Math.min(Number(galBalance), Math.max(Number(decision.galactic_amount), 1_000));
-      const suiAmt = Math.max(Number(decision.sui_amount), 1_000);
+      const galAmt = Math.min(Number(galBalance), Math.max(rawGalAmt, 1_000));
+      const suiAmt = Math.max(rawSuiAmt, 1_000);
       if (galAmt < 1_000) throw new Error(`Insufficient GALACTIC for liquidity (have ${galBalance}, need ≥1000)`);
       const epoch = await getCurrentEpoch();
       const { digest, receiptId } = await exec.addLiquidity(
@@ -528,22 +581,39 @@ async function executeDecision(
     case 'swap_galactic_for_sui': {
       const reactorId = persistedState.sharedObjects.reactorId;
       if (!reactorId) throw new Error('Reactor not found');
-      const digest = await exec.swapGalacticForSui(ctx, reactorId, Number(decision.galactic_amount), Number(decision.min_sui_out) || 0);
-      return { digest, description: `Swapped ${decision.galactic_amount} GALACTIC for SUI` };
+      // Cap galactic_amount at available balance
+      const swapGalCoins = await client.getCoins({
+        owner: addr,
+        coinType: `${PACKAGE_ID}::galactic_token::GALACTIC_TOKEN`,
+      });
+      const swapGalBal = swapGalCoins.data.reduce((s, c) => s + BigInt(c.balance), 0n);
+      const rawSwapAmt = toRaw(Number(decision.galactic_amount));
+      const swapGalAmt = Math.min(rawSwapAmt, Number(swapGalBal));
+      if (swapGalAmt < 1) throw new Error('No GALACTIC to swap');
+      const digest = await exec.swapGalacticForSui(ctx, reactorId, swapGalAmt, 1); // min_out=1 to avoid slippage revert
+      return { digest, description: `Swapped ${swapGalAmt} GALACTIC for SUI` };
     }
 
     case 'swap_sui_for_galactic': {
       const reactorId = persistedState.sharedObjects.reactorId;
       if (!reactorId) throw new Error('Reactor not found');
-      const digest = await exec.swapSuiForGalactic(ctx, reactorId, Number(decision.sui_amount), Number(decision.min_galactic_out) || 0);
-      return { digest, description: `Swapped ${decision.sui_amount} SUI for GALACTIC` };
+      // Cap SUI amount at available balance (leave some for gas)
+      const suiCoins = await client.getCoins({ owner: addr });
+      const suiBal = suiCoins.data.reduce((s, c) => s + BigInt(c.balance), 0n);
+      const maxSui = Number(suiBal) - 50_000_000; // Reserve 0.05 SUI for gas
+      const rawSwapAmt = toRaw(Number(decision.sui_amount));
+      const swapSuiAmt = Math.min(rawSwapAmt, Math.max(maxSui, 0));
+      if (swapSuiAmt < 1) throw new Error('No SUI to swap (need reserve for gas)');
+      const digest = await exec.swapSuiForGalactic(ctx, reactorId, swapSuiAmt, 1); // min_out=1
+      return { digest, description: `Swapped ${swapSuiAmt} SUI for GALACTIC` };
     }
 
     case 'purchase_insurance': {
       const poolId = persistedState.sharedObjects.insurancePoolId;
       if (!poolId) throw new Error('Insurance pool not found');
       const epoch = await getCurrentEpoch();
-      const { digest, policyId } = await exec.purchaseInsurance(ctx, poolId, Number(decision.insured_amount), epoch);
+      const rawInsuredAmt = toRaw(Number(decision.insured_amount));
+      const { digest, policyId } = await exec.purchaseInsurance(ctx, poolId, rawInsuredAmt, epoch);
       if (policyId) agentState.insurancePolicyIds.push(policyId);
       return { digest, description: `Purchased insurance for ${decision.insured_amount} GALACTIC` };
     }
@@ -567,17 +637,27 @@ async function executeDecision(
     }
 
     case 'create_voting_power': {
+      // Compute actual voting power from on-chain data
+      const galCoins = await client.getCoins({
+        owner: addr,
+        coinType: `${PACKAGE_ID}::galactic_token::GALACTIC_TOKEN`,
+      });
+      const galBalance = galCoins.data.reduce((sum, c) => sum + BigInt(c.balance), 0n);
+      const ownGameStateVP = await queryGameState(addr);
+      const totalLevels = ownGameStateVP.agents.reduce((sum, a) => sum + a.level, 0);
+      const planets = await queryPlanets(persistedState.planetIds);
+      const ownPlanets = planets.filter(p => p.owner === addr);
       const epoch = await getCurrentEpoch();
       const { digest, votingPowerId } = await exec.createVotingPower(
         ctx,
-        Number(decision.token_balance) || 100,
-        Number(decision.staked_balance) || 0,
-        Number(decision.total_agent_levels) || 1,
-        Number(decision.controlled_planets) || 0,
+        Number(galBalance),
+        0,
+        totalLevels,
+        ownPlanets.length,
         epoch,
       );
       if (votingPowerId) agentState.votingPowerId = votingPowerId;
-      return { digest, description: `Created voting power snapshot` };
+      return { digest, description: `Created voting power (balance:${galBalance}, agents:${totalLevels} levels, planets:${ownPlanets.length})` };
     }
 
     case 'create_proposal': {
@@ -585,6 +665,15 @@ async function executeDecision(
       if (!registryId) throw new Error('GovernanceRegistry not found');
       if (!agentState.votingPowerId) throw new Error('No VotingPower — create_voting_power first');
       const proposalType = PROPOSAL_TYPES[decision.proposal_type] ?? 0;
+      // Compute correct cost based on proposal type (9-decimal amounts)
+      const PROPOSAL_COSTS: Record<number, number> = {
+        0: 1_000_000_000_000,     // Parameter: 1K GALACTIC
+        1: 10_000_000_000_000,    // Emission: 10K GALACTIC
+        2: 50_000_000_000_000,    // Feature: 50K GALACTIC
+        3: 100_000_000_000_000,   // War: 100K GALACTIC
+        4: 500_000_000_000_000,   // Upgrade: 500K GALACTIC
+      };
+      const galacticCost = PROPOSAL_COSTS[proposalType] ?? PROPOSAL_COSTS[0];
       const epoch = await getCurrentEpoch();
       const { digest, proposalId } = await exec.createProposal(
         ctx, registryId, agentState.votingPowerId,
@@ -595,10 +684,10 @@ async function executeDecision(
           targetFunction: decision.target_function || 'update_swap_fee',
           parameters: decision.parameters || [25],
         },
-        0, epoch,
+        galacticCost, epoch,
       );
       if (proposalId) persistedState.proposalIds.push(proposalId);
-      return { digest, description: `Created proposal: "${decision.title}"` };
+      return { digest, description: `Created proposal: "${decision.title}" (cost: ${galacticCost / 1_000_000_000} GALACTIC)` };
     }
 
     case 'cast_vote': {
@@ -607,6 +696,25 @@ async function executeDecision(
       const epoch = await getCurrentEpoch();
       const digest = await exec.castVote(ctx, decision.proposal_id, agentState.votingPowerId, decision.support !== false, epoch);
       return { digest, description: `Voted ${decision.support !== false ? 'FOR' : 'AGAINST'} proposal` };
+    }
+
+    case 'finalize_proposal': {
+      const registryId = persistedState.sharedObjects.governanceRegistryId;
+      if (!registryId) throw new Error('GovernanceRegistry not found');
+      if (!isValidObjectId(decision.proposal_id)) throw new Error(`Invalid proposal_id`);
+      const epoch = await getCurrentEpoch();
+      const totalSupply = Number(decision.total_supply) || 1_000_000_000_000_000;
+      const digest = await exec.finalizeProposal(ctx, registryId, decision.proposal_id, totalSupply, epoch);
+      return { digest, description: `Finalized proposal ${decision.proposal_id.slice(0, 10)}...` };
+    }
+
+    case 'execute_proposal': {
+      const registryId = persistedState.sharedObjects.governanceRegistryId;
+      if (!registryId) throw new Error('GovernanceRegistry not found');
+      if (!isValidObjectId(decision.proposal_id)) throw new Error(`Invalid proposal_id`);
+      const epoch = await getCurrentEpoch();
+      const digest = await exec.executeProposal(ctx, registryId, decision.proposal_id, epoch);
+      return { digest, description: `Executed proposal ${decision.proposal_id.slice(0, 10)}...` };
     }
 
     default:
@@ -633,6 +741,13 @@ function isValidObjectId(id: unknown): id is string {
 function u64(val: unknown): number {
   const n = Number(val) || 0;
   return Math.max(0, Math.floor(n));
+}
+
+const DECIMALS = 1_000_000_000; // 9 decimals for both GALACTIC and SUI
+
+/** Convert human-readable amount to raw units (9 decimals) */
+function toRaw(humanAmount: number): number {
+  return Math.floor(humanAmount * DECIMALS);
 }
 
 /** Try to extract a valid JSON object from AI response */
@@ -734,7 +849,7 @@ async function main() {
   const PREMINT = process.env.AGENT_PREMINT_GALACTIC === 'true';
   const treasuryId = persistedState.sharedObjects.treasuryId;
   if (PREMINT && treasuryId) {
-    const MINT_AMOUNT = 1_000_000; // 1M GALACTIC per agent
+    const MINT_AMOUNT = 1_000_000_000_000_000; // 1M GALACTIC per agent (9 decimals)
     const ctx1 = { client, signer: keypair1, packageId: PACKAGE_ID };
     for (const [addr, label] of [[address1, 'NEXUS-7'], [address2, 'KRAIT-X']] as const) {
       const galactic = await client.getCoins({
@@ -757,6 +872,26 @@ async function main() {
     }
   } else if (PREMINT) {
     console.log('  Warning: GalacticTreasury not found — skipping pre-game mint');
+  }
+
+  // ── Lower governance params for testing ──
+  const govAdminCap = persistedState.sharedObjects.adminCaps.governanceAdminCap;
+  const govRegistryId = persistedState.sharedObjects.governanceRegistryId;
+  if (govAdminCap && govRegistryId) {
+    try {
+      const ctx1 = { client, signer: keypair1, packageId: PACKAGE_ID };
+      console.log('  Setting governance parameters for testing...');
+      const digest = await exec.updateGovernanceParameters(ctx1, govAdminCap, govRegistryId, {
+        votingPeriod: 2,
+        executionDelay: 1,
+        proposalThreshold: 1_000_000_000, // 1 GALACTIC (9 decimals)
+        quorumThreshold: 10,
+      });
+      console.log(`  Governance params updated! Tx: ${digest}`);
+      await sleep(2000);
+    } catch (e: any) {
+      console.error(`  Failed to update governance params: ${e.message?.slice(0, 150)}`);
+    }
   }
 
   savePersistedState(persistedState);
@@ -842,6 +977,25 @@ async function main() {
       const planets = await queryPlanets(persistedState.planetIds);
       const templates = await queryMissionTemplates(persistedState.missionTemplateIds);
 
+      // Query GALACTIC balance for this agent
+      const agentGalCoins = await client.getCoins({
+        owner: agentState.address,
+        coinType: `${PACKAGE_ID}::galactic_token::GALACTIC_TOKEN`,
+      });
+      const agentGalBalance = agentGalCoins.data.reduce((sum, c) => sum + BigInt(c.balance), 0n);
+
+      // Query reactor state if it exists
+      let reactorState: ReactorInfo | null = null;
+      if (persistedState.sharedObjects.reactorId) {
+        reactorState = await queryReactorState(persistedState.sharedObjects.reactorId);
+      }
+
+      // Query proposals if any exist
+      let proposalInfos: ProposalInfo[] = [];
+      if (persistedState.proposalIds.length > 0) {
+        proposalInfos = await queryProposals(persistedState.proposalIds);
+      }
+
       // Can't colonize if all planets are already owned
       if (planets.length > 0 && planets.every(p => p.owner)) {
         actions = actions.filter(a => a !== 'colonize_planet');
@@ -879,11 +1033,34 @@ async function main() {
       if (planets.length === 0) {
         actions = actions.filter(a => a !== 'colonize_planet' && a !== 'extract_resources' && a !== 'upgrade_defense');
       }
+
+      // Governance lifecycle prerequisites
+      if (proposalInfos.length === 0) {
+        actions = actions.filter(a => a !== 'finalize_proposal' && a !== 'execute_proposal' && a !== 'cast_vote');
+      } else {
+        const currentEpochForFilter = await getCurrentEpoch();
+        // finalize_proposal: only if there are Active (status=0) proposals past voting period
+        const finalizableProposals = proposalInfos.filter(p => p.status === 0 && p.voting_ends_at <= currentEpochForFilter);
+        if (finalizableProposals.length === 0) {
+          actions = actions.filter(a => a !== 'finalize_proposal');
+        }
+        // execute_proposal: only if there are Passed (status=1) proposals past execution delay
+        const executableProposals = proposalInfos.filter(p => p.status === 1 && p.execution_after <= currentEpochForFilter);
+        if (executableProposals.length === 0) {
+          actions = actions.filter(a => a !== 'execute_proposal');
+        }
+        // cast_vote: only if there are Active proposals (not past voting period)
+        const votableProposals = proposalInfos.filter(p => p.status === 0 && p.voting_ends_at > currentEpochForFilter);
+        if (votableProposals.length === 0) {
+          actions = actions.filter(a => a !== 'cast_vote');
+        }
+      }
+
       if (actions.length === 0) continue;
 
       // Build prompt
       const systemPrompt = buildSystemPrompt(profile, rivalName, rivalState.address, agentState.phase, objectives, actions);
-      const userPrompt = buildUserPrompt(ownGameState, rivalGameState, rivalName, agentState.phase, persistedState, planets, templates, agentState);
+      const userPrompt = buildUserPrompt(ownGameState, rivalGameState, rivalName, agentState.phase, persistedState, planets, templates, agentState, agentGalBalance, reactorState, proposalInfos);
 
       console.log(`\n${'─'.repeat(50)}`);
       console.log(`  ${agentName} [${agentState.phase}] (round ${agentState.roundsInPhase + 1}) thinking...`);

@@ -693,3 +693,60 @@ export async function castVote(
   const { digest } = await execute(ctx, tx);
   return digest;
 }
+
+// ── Admin governance actions ──────────────────────────────────────
+
+export async function updateGovernanceParameters(
+  ctx: ExecContext, adminCapId: string, registryId: string,
+  params: { votingPeriod: number; executionDelay: number; proposalThreshold: number; quorumThreshold: number },
+): Promise<string> {
+  const tx = new Transaction();
+  tx.moveCall({
+    target: `${mod(ctx, 'governance')}::update_parameters`,
+    arguments: [
+      tx.object(adminCapId),
+      tx.object(registryId),
+      tx.pure.u64(params.votingPeriod),
+      tx.pure.u64(params.executionDelay),
+      tx.pure.u64(params.proposalThreshold),
+      tx.pure.u64(params.quorumThreshold),
+    ],
+  });
+  const { digest } = await execute(ctx, tx);
+  return digest;
+}
+
+export async function finalizeProposal(
+  ctx: ExecContext, registryId: string, proposalId: string,
+  totalSupply: number, currentEpoch: number,
+): Promise<string> {
+  const tx = new Transaction();
+  tx.moveCall({
+    target: `${mod(ctx, 'governance')}::finalize_proposal`,
+    arguments: [
+      tx.object(registryId),
+      tx.object(proposalId),
+      tx.pure.u64(totalSupply),
+      tx.pure.u64(currentEpoch),
+    ],
+  });
+  const { digest } = await execute(ctx, tx);
+  return digest;
+}
+
+export async function executeProposal(
+  ctx: ExecContext, registryId: string, proposalId: string,
+  currentEpoch: number,
+): Promise<string> {
+  const tx = new Transaction();
+  tx.moveCall({
+    target: `${mod(ctx, 'governance')}::execute_proposal`,
+    arguments: [
+      tx.object(registryId),
+      tx.object(proposalId),
+      tx.pure.u64(currentEpoch),
+    ],
+  });
+  const { digest } = await execute(ctx, tx);
+  return digest;
+}

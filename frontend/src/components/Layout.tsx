@@ -34,7 +34,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'defi', icon: '⚡', label: 'DeFi' },
   { id: 'governance', icon: '🏛️', label: 'Governance' },
   { id: 'minter', icon: '🧬', label: 'Char Minter' },
-  { id: 'ai-rivals', icon: '🧠', label: 'AI Rivals' },
+  { id: 'ai-rivals', icon: '🧠', label: 'AI Fleets' },
 ];
 
 // Generate deterministic star positions with more variety

@@ -239,7 +239,7 @@ export const AIRivalsView: React.FC = () => {
   if (!configured) {
     return (
       <div className="p-8 rounded-lg bg-slate-900/80 border border-slate-700 text-center space-y-3">
-        <h2 className="text-xl font-bold text-white">AI Rivals</h2>
+        <h2 className="text-xl font-bold text-white">AI Fleets</h2>
         <p className="text-slate-400">
           Agent addresses not configured. Run <code className="text-cyan-400">pnpm agents</code> first to
           generate <code className="text-cyan-400">VITE_NEXUS7_ADDRESS</code> and{' '}

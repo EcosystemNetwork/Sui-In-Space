@@ -5,7 +5,7 @@
 import type {
   AgentProfile, AgentState, GameState, Phase,
   AgentInfo, ShipInfo, StationInfo, PlanetInfo, MissionTemplateInfo,
-  PersistedState,
+  PersistedState, ProposalInfo, ReactorInfo,
 } from './types.js';
 import {
   AGENT_TYPES, AGENT_CLASSES, SHIP_CLASSES, STATION_TYPES,
@@ -63,11 +63,11 @@ function getActionDoc(action: ActionName): string {
   { "action": "upgrade_defense", "planet_id": "<id>", "amount": <num 1-10> }`;
 
     case 'create_mission_template':
-      return `create_mission_template — Create a mission (admin only)
-  { "action": "create_mission_template", "name": "<name>", "description": "<desc>", "mission_type": "${Object.keys(MISSION_TYPES).join('|')}", "difficulty": <1-5>, "min_agent_level": <num>, "min_processing": <num>, "min_mobility": <num>, "min_power": <num>, "required_ship_class": "<class or null>", "energy_cost": <num>, "galactic_cost": <num>, "duration_epochs": <num 1-5>, "base_reward": <num>, "experience_reward": <num>, "loot_chance": <num 0-100> }`;
+      return `create_mission_template — Create a mission (admin only, galactic_cost and base_reward in whole tokens)
+  { "action": "create_mission_template", "name": "<name>", "description": "<desc>", "mission_type": "${Object.keys(MISSION_TYPES).join('|')}", "difficulty": <1-5>, "min_agent_level": <num>, "min_processing": <num>, "min_mobility": <num>, "min_power": <num>, "required_ship_class": "<class or null>", "energy_cost": <num>, "galactic_cost": <num 100-10000>, "duration_epochs": <num 1-5>, "base_reward": <num 100-5000>, "experience_reward": <num>, "loot_chance": <num 0-100> }`;
 
     case 'fund_reward_pool':
-      return `fund_reward_pool — Fund mission reward pool with GALACTIC
+      return `fund_reward_pool — Fund mission reward pool with GALACTIC (amounts in whole tokens, e.g. 10000 = 10K GALACTIC)
   { "action": "fund_reward_pool", "amount": <num> }`;
 
     case 'start_mission':
@@ -79,7 +79,7 @@ function getActionDoc(action: ActionName): string {
   { "action": "complete_mission", "template_id": "<id>", "mission_id": "<id>" }`;
 
     case 'mint_galactic':
-      return `mint_galactic — Mint GALACTIC tokens (admin only, needs GalacticTreasury)
+      return `mint_galactic — Mint GALACTIC tokens (amounts in whole tokens, e.g. 50000 = 50K GALACTIC)
   { "action": "mint_galactic", "amount": <num>, "recipient": "<address>" }`;
 
     case 'create_and_share_reactor':
@@ -91,19 +91,19 @@ function getActionDoc(action: ActionName): string {
   { "action": "create_and_share_insurance_pool" }`;
 
     case 'add_liquidity':
-      return `add_liquidity — Add GALACTIC + SUI liquidity to reactor
-  { "action": "add_liquidity", "galactic_amount": <num>, "sui_amount": <num> }`;
+      return `add_liquidity — Add GALACTIC + SUI liquidity to reactor (amounts in whole tokens, e.g. galactic_amount: 50000, sui_amount: 5000)
+  { "action": "add_liquidity", "galactic_amount": <num 1000-100000>, "sui_amount": <num 100-10000> }`;
 
     case 'swap_galactic_for_sui':
-      return `swap_galactic_for_sui — Swap GALACTIC for SUI
-  { "action": "swap_galactic_for_sui", "galactic_amount": <num>, "min_sui_out": <num> }`;
+      return `swap_galactic_for_sui — Swap GALACTIC for SUI (amounts in whole tokens, e.g. galactic_amount: 5000 = 5K GALACTIC; set to 5-20% of your balance)
+  { "action": "swap_galactic_for_sui", "galactic_amount": <num>, "min_sui_out": 1 }`;
 
     case 'swap_sui_for_galactic':
-      return `swap_sui_for_galactic — Swap SUI for GALACTIC
-  { "action": "swap_sui_for_galactic", "sui_amount": <num>, "min_galactic_out": <num> }`;
+      return `swap_sui_for_galactic — Swap SUI for GALACTIC (amounts in whole tokens, e.g. sui_amount: 500 = 500 SUI; set to a small portion of your SUI)
+  { "action": "swap_sui_for_galactic", "sui_amount": <num>, "min_galactic_out": 1 }`;
 
     case 'purchase_insurance':
-      return `purchase_insurance — Buy insurance (2% premium)
+      return `purchase_insurance — Buy insurance (2% premium, amounts in whole tokens, e.g. insured_amount: 10000 = 10K GALACTIC)
   { "action": "purchase_insurance", "insured_amount": <num> }`;
 
     case 'assign_operator':
@@ -119,12 +119,20 @@ function getActionDoc(action: ActionName): string {
   { "action": "create_voting_power", "token_balance": <num>, "staked_balance": <num>, "total_agent_levels": <num>, "controlled_planets": <num> }`;
 
     case 'create_proposal':
-      return `create_proposal — Submit a governance proposal
+      return `create_proposal — Submit a governance proposal (costs: Parameter=1K, Emission=10K, Feature=50K, War=100K, Upgrade=500K GALACTIC)
   { "action": "create_proposal", "title": "<title>", "description": "<desc>", "proposal_type": "${Object.keys(PROPOSAL_TYPES).join('|')}", "target_module": "<module>", "target_function": "<function>", "parameters": [<num>...] }`;
 
     case 'cast_vote':
       return `cast_vote — Vote on a proposal
   { "action": "cast_vote", "proposal_id": "<id>", "support": <true|false> }`;
+
+    case 'finalize_proposal':
+      return `finalize_proposal — Finalize a proposal after voting period ends (check voting_ends_at vs current epoch)
+  { "action": "finalize_proposal", "proposal_id": "<id>", "total_supply": <num> }`;
+
+    case 'execute_proposal':
+      return `execute_proposal — Execute a passed proposal (status must be Passed and past execution delay)
+  { "action": "execute_proposal", "proposal_id": "<id>" }`;
 
     default:
       return '';
@@ -210,6 +218,9 @@ export function buildUserPrompt(
   planets: PlanetInfo[],
   missionTemplates: MissionTemplateInfo[],
   agentState: AgentState,
+  galacticBalance?: bigint,
+  reactorState?: ReactorInfo | null,
+  proposals?: ProposalInfo[],
 ): string {
   let prompt = `=== YOUR FLEET ===
 Agents (${ownState.agents.length}):
@@ -230,6 +241,19 @@ ${fmtList(rivalState.ships, fmtShip)}
 
 Stations (${rivalState.stations.length}):
 ${fmtList(rivalState.stations, fmtStation)}`;
+
+  // Add GALACTIC balance
+  if (galacticBalance !== undefined) {
+    const humanReadable = Number(galacticBalance / 1_000_000_000n);
+    prompt += `\n\nYour GALACTIC balance: ${humanReadable.toLocaleString()} GALACTIC`;
+  }
+
+  // Add reactor reserves
+  if (reactorState) {
+    const galRes = Number(BigInt(reactorState.galactic_reserve) / 1_000_000_000n);
+    const suiRes = Number(BigInt(reactorState.sui_reserve) / 1_000_000_000n);
+    prompt += `\nReactor reserves: ${galRes.toLocaleString()} GALACTIC / ${suiRes.toLocaleString()} SUI`;
+  }
 
   // Add world state for relevant phases
   if (planets.length > 0) {
@@ -278,8 +302,17 @@ ${fmtList(missionTemplates, fmtMission)}`;
     if (agentState.votingPowerId) {
       prompt += `\nYour Voting Power ID: ${agentState.votingPowerId}`;
     }
-    if (persistedState.proposalIds.length > 0) {
-      prompt += `\nActive Proposal IDs: ${persistedState.proposalIds.join(', ')}`;
+    if (proposals && proposals.length > 0) {
+      const STATUS_NAMES: Record<number, string> = { 0: 'Active', 1: 'Passed', 2: 'Rejected', 3: 'Executed', 4: 'Cancelled' };
+      const PTYPE_NAMES: Record<number, string> = { 0: 'Parameter', 1: 'Emission', 2: 'Feature', 3: 'War', 4: 'Upgrade' };
+      prompt += `\n\n=== PROPOSALS (${proposals.length}) ===`;
+      for (const p of proposals) {
+        const status = STATUS_NAMES[p.status] || String(p.status);
+        const ptype = PTYPE_NAMES[p.proposal_type] || String(p.proposal_type);
+        prompt += `\n  - "${p.title}" [${p.id}] (${ptype}, status:${status}, for:${p.votes_for}/against:${p.votes_against}, voting ends epoch ${p.voting_ends_at}${p.status === 1 ? `, execute after epoch ${p.execution_after}` : ''})`;
+      }
+    } else if (persistedState.proposalIds.length > 0) {
+      prompt += `\nProposal IDs: ${persistedState.proposalIds.join(', ')}`;
     }
   }
 

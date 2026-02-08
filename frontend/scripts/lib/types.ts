@@ -200,6 +200,22 @@ export interface GovernanceInfo {
   quorum_threshold: number;
 }
 
+export interface ProposalInfo {
+  id: string;
+  title: string;
+  description: string;
+  proposal_type: number;
+  target_module: string;
+  target_function: string;
+  parameters: number[];
+  votes_for: number;
+  votes_against: number;
+  status: number; // 0=Active, 1=Passed, 2=Rejected, 3=Executed, 4=Cancelled
+  created_at: number;
+  voting_ends_at: number;
+  execution_after: number;
+}
+
 export interface TreasuryInfo {
   id: string;
   total_minted: number;
@@ -263,7 +279,7 @@ export const MISSION_TYPES: Record<string, number> = {
   DataHeist: 0, Espionage: 1, Smuggling: 2, AITraining: 3, Combat: 4, Exploration: 5,
 };
 export const PROPOSAL_TYPES: Record<string, number> = {
-  ParameterChange: 0, TreasurySpend: 1, ModuleUpgrade: 2, Emergency: 3,
+  Parameter: 0, Emission: 1, Feature: 2, War: 3, Upgrade: 4,
 };
 
 // Reverse lookups
