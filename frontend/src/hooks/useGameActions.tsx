@@ -46,7 +46,7 @@ interface GameActionsContextType {
   recallShip: (shipId: string) => Promise<void>;
 
   // Mission Actions
-  startMission: (missionId: string) => Promise<void>;
+  startMission: (agentId: string) => Promise<void>;
   abortMission: (missionId: string) => Promise<void>;
   claimRewards: (missionId?: string) => Promise<void>;
 
@@ -419,7 +419,7 @@ export function GameActionsProvider({ children }: { children: ReactNode }) {
 
   // ============ Mission Actions ============
 
-  const startMission = useCallback(async (missionId: string) => {
+  const startMission = useCallback(async (agentId: string) => {
     if (!player) {
       addToast('error', 'Error', 'No player data.');
       return;
@@ -427,9 +427,9 @@ export function GameActionsProvider({ children }: { children: ReactNode }) {
 
     const newMission: ActiveMission = {
       id: crypto.randomUUID(),
-      templateId: missionId,
+      templateId: 'general',
       player: player.address,
-      agentId: missionId, // Using missionId as agentId for now (views pass agentId here)
+      agentId,
       shipId: null,
       startedAt: Date.now(),
       endsAt: Date.now() + 4 * 60 * 60 * 1000, // 4 hours
@@ -439,8 +439,8 @@ export function GameActionsProvider({ children }: { children: ReactNode }) {
     if (isSupabaseConfigured() && player.dbId) {
       const dbMission = await dbCreateMission({
         player_id: player.dbId,
-        template_id: missionId,
-        agent_id: missionId,
+        template_id: 'general',
+        agent_id: agentId,
         ship_id: null,
         status: 0,
         started_at: new Date().toISOString(),
@@ -455,7 +455,7 @@ export function GameActionsProvider({ children }: { children: ReactNode }) {
         player_id: player.dbId,
         event_type: 'mission_started',
         description: `Started a new mission`,
-        metadata: { missionId: newMission.id },
+        metadata: { missionId: newMission.id, agentId },
       });
     }
 
