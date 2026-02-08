@@ -3,7 +3,8 @@ import { animate, stagger } from 'animejs';
 import { ShipCard } from '../ShipCard';
 import type { Ship } from '../../types';
 import { ShipClass } from '../../types';
-import { useMockActions } from '../../hooks/useMockActions';
+import { useGameActions } from '../../hooks/useGameActions';
+import { useGameStore } from '../../hooks/useGameStore';
 
 /**
  * Hangar View Component
@@ -11,69 +12,6 @@ import { useMockActions } from '../../hooks/useMockActions';
  * Enhanced with anime.js animations
  */
 
-// Demo ships for display
-const DEMO_SHIPS: Ship[] = [
-  {
-    id: '0xship1',
-    name: 'Shadow Runner',
-    shipClass: ShipClass.Cruiser,
-    modules: { hull: '0xhull1', engine: '0xengine1', aiCore: null, weapon: '0xweapon1', utility: null },
-    maxHealth: 350,
-    currentHealth: 280,
-    speed: 60,
-    firepower: 45,
-    cargoCapacity: 150,
-    fuelEfficiency: 120,
-    pilot: '0xpilot1',
-    crew: ['0xcrew1', '0xcrew2'],
-    maxCrew: 5,
-    isDocked: false,
-    dockedAt: null,
-    inCombat: false,
-    fuel: 85,
-    maxFuel: 150,
-  },
-  {
-    id: '0xship2',
-    name: 'Stellar Phoenix',
-    shipClass: ShipClass.Fighter,
-    modules: { hull: '0xhull2', engine: '0xengine2', aiCore: '0xai1', weapon: '0xweapon2', utility: null },
-    maxHealth: 180,
-    currentHealth: 180,
-    speed: 95,
-    firepower: 65,
-    cargoCapacity: 30,
-    fuelEfficiency: 85,
-    pilot: '0xpilot2',
-    crew: [],
-    maxCrew: 2,
-    isDocked: true,
-    dockedAt: '0xstation1',
-    inCombat: false,
-    fuel: 120,
-    maxFuel: 120,
-  },
-  {
-    id: '0xship3',
-    name: 'Cargo Whale',
-    shipClass: ShipClass.Freighter,
-    modules: { hull: '0xhull3', engine: '0xengine3', aiCore: null, weapon: null, utility: '0xutil1' },
-    maxHealth: 500,
-    currentHealth: 450,
-    speed: 35,
-    firepower: 10,
-    cargoCapacity: 500,
-    fuelEfficiency: 60,
-    pilot: null,
-    crew: [],
-    maxCrew: 8,
-    isDocked: true,
-    dockedAt: '0xstation2',
-    inCombat: false,
-    fuel: 200,
-    maxFuel: 300,
-  },
-];
 
 const SHIP_CLASS_BLUEPRINTS = [
   { class: ShipClass.Scout, name: 'Scout', cost: 5000, icon: '🔍' },
@@ -88,7 +26,9 @@ const SHIP_CLASS_BLUEPRINTS = [
 export const HangarView: React.FC = () => {
   const [selectedShip, setSelectedShip] = useState<Ship | null>(null);
   const [viewMode, setViewMode] = useState<'fleet' | 'build'>('fleet');
-  const { buildShip, repairShip, refuelShip, deployShip, recallShip } = useMockActions();
+  const { buildShip, repairShip, refuelShip, deployShip, recallShip } = useGameActions();
+  const player = useGameStore((s) => s.player);
+  const ships = player?.ships ?? [];
 
   const headerRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
@@ -176,26 +116,26 @@ export const HangarView: React.FC = () => {
           {/* Fleet Stats */}
           <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="stat-card p-3 rounded-lg bg-blue-500/10 border border-blue-500/30" style={{ opacity: 0 }}>
-              <div className="text-2xl font-bold text-blue-400">{DEMO_SHIPS.length}</div>
+              <div className="text-2xl font-bold text-blue-400">{ships.length}</div>
               <div className="text-xs text-slate-400">Total Ships</div>
             </div>
             <div className="stat-card p-3 rounded-lg bg-green-500/10 border border-green-500/30" style={{ opacity: 0 }}>
-              <div className="text-2xl font-bold text-green-400">{DEMO_SHIPS.filter(s => s.isDocked).length}</div>
+              <div className="text-2xl font-bold text-green-400">{ships.filter(s => s.isDocked).length}</div>
               <div className="text-xs text-slate-400">Docked</div>
             </div>
             <div className="stat-card p-3 rounded-lg bg-orange-500/10 border border-orange-500/30" style={{ opacity: 0 }}>
-              <div className="text-2xl font-bold text-orange-400">{DEMO_SHIPS.reduce((sum, s) => sum + s.firepower, 0)}</div>
+              <div className="text-2xl font-bold text-orange-400">{ships.reduce((sum, s) => sum + s.firepower, 0)}</div>
               <div className="text-xs text-slate-400">Total Firepower</div>
             </div>
             <div className="stat-card p-3 rounded-lg bg-purple-500/10 border border-purple-500/30" style={{ opacity: 0 }}>
-              <div className="text-2xl font-bold text-purple-400">{DEMO_SHIPS.reduce((sum, s) => sum + s.cargoCapacity, 0)}</div>
+              <div className="text-2xl font-bold text-purple-400">{ships.reduce((sum, s) => sum + s.cargoCapacity, 0)}</div>
               <div className="text-xs text-slate-400">Cargo Capacity</div>
             </div>
           </div>
 
           {/* Ship Grid */}
           <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {DEMO_SHIPS.map((ship) => (
+            {ships.map((ship) => (
               <div key={ship.id} className="ship-card-wrapper" style={{ opacity: 0 }}>
                 <ShipCard
                   ship={ship}

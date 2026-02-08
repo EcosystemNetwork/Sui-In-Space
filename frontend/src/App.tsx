@@ -2,6 +2,7 @@ import { useState, lazy, Suspense } from 'react';
 import Layout, { TabType } from './components/Layout';
 import { ActivityLog } from './components/ActivityLog';
 import { usePlayerData } from './hooks/usePlayerData';
+import { useGameStore } from './hooks/useGameStore';
 
 // Lazy load view components for better initial load performance
 const SpaceBaseMapView = lazy(() => import('./components/views/SpaceBaseMapView').then(m => ({ default: m.SpaceBaseMapView })));
@@ -30,6 +31,17 @@ function App() {
   // Load player data from Supabase when wallet connects
   usePlayerData();
 
+  // Get real player data from store
+  const player = useGameStore((s) => s.player);
+  const galacticBalance = player ? Number(player.galacticBalance) : 0;
+  const playerLevel = player?.agents.length
+    ? Math.max(...player.agents.map((a) => a.level))
+    : 1;
+  const activeMissionsCount = player?.activeMissions.length ?? 0;
+  const shipsCount = player?.ships.length ?? 0;
+  const agentsCount = player?.agents.length ?? 0;
+  const stationsCount = player?.stations.length ?? 0;
+
   const renderView = () => {
     switch (activeTab) {
       case 'base':
@@ -57,9 +69,9 @@ function App() {
     <Layout
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      galacticBalance={125000}
+      galacticBalance={galacticBalance}
       energyLevel={85}
-      playerLevel={15}
+      playerLevel={playerLevel}
     >
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Main Content Area */}
@@ -80,23 +92,23 @@ function App() {
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-slate-400">Active Missions</span>
-                <span className="text-green-400">1</span>
+                <span className="text-green-400">{activeMissionsCount}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-400">Fleet Ships</span>
-                <span className="text-blue-400">3</span>
+                <span className="text-blue-400">{shipsCount}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-400">Agents</span>
-                <span className="text-purple-400">4</span>
+                <span className="text-purple-400">{agentsCount}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-400">Stations Owned</span>
-                <span className="text-orange-400">2</span>
+                <span className="text-orange-400">{stationsCount}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-400">Pending Rewards</span>
-                <span className="text-cyan-400">1,703 GALACTIC</span>
+                <span className="text-cyan-400">{galacticBalance > 0 ? `${galacticBalance.toLocaleString()} GALACTIC` : '0 GALACTIC'}</span>
               </div>
             </div>
           </div>

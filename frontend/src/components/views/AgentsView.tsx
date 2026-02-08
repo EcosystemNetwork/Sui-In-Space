@@ -2,8 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { animate, stagger } from 'animejs';
 import { AgentCard } from '../AgentCard';
 import type { Agent } from '../../types';
-import { AgentType, AgentClass } from '../../types';
-import { useMockActions } from '../../hooks/useMockActions';
+import { AgentClass } from '../../types';
+import { useGameActions } from '../../hooks/useGameActions';
+import { useGameStore } from '../../hooks/useGameStore';
 
 /**
  * Agents View Component
@@ -11,85 +12,6 @@ import { useMockActions } from '../../hooks/useMockActions';
  * Enhanced with anime.js animations
  */
 
-// Demo agents for display
-const DEMO_AGENTS: Agent[] = [
-  {
-    id: '0xagent1',
-    name: 'Nova-7',
-    agentType: AgentType.Cyborg,
-    class: AgentClass.Hacker,
-    stats: { processing: 48, mobility: 35, power: 22, resilience: 30, luck: 15, neuralBandwidth: 55 },
-    level: 15,
-    experience: 12450,
-    firmwareVersion: 2,
-    aiModelLineage: 'Prometheus-V3',
-    augmentSlots: ['0xaug1', '0xaug2'],
-    maxAugmentSlots: 3,
-    missionsCompleted: 47,
-    battlesWon: 12,
-    totalEarnings: BigInt(125000000000000),
-    isStaked: false,
-    stakedAt: null,
-    currentMission: null,
-  },
-  {
-    id: '0xagent2',
-    name: 'Vex-Prime',
-    agentType: AgentType.Android,
-    class: AgentClass.Pilot,
-    stats: { processing: 30, mobility: 72, power: 35, resilience: 28, luck: 20, neuralBandwidth: 40 },
-    level: 22,
-    experience: 45800,
-    firmwareVersion: 3,
-    aiModelLineage: 'Zenith-X2',
-    augmentSlots: ['0xaug3'],
-    maxAugmentSlots: 4,
-    missionsCompleted: 89,
-    battlesWon: 34,
-    totalEarnings: BigInt(350000000000000),
-    isStaked: true,
-    stakedAt: '0xstation1',
-    currentMission: null,
-  },
-  {
-    id: '0xagent3',
-    name: 'Titan-9',
-    agentType: AgentType.Cyborg,
-    class: AgentClass.MechOperator,
-    stats: { processing: 22, mobility: 25, power: 75, resilience: 60, luck: 10, neuralBandwidth: 25 },
-    level: 18,
-    experience: 28000,
-    firmwareVersion: 2,
-    aiModelLineage: 'Atlas-M4',
-    augmentSlots: [],
-    maxAugmentSlots: 3,
-    missionsCompleted: 62,
-    battlesWon: 28,
-    totalEarnings: BigInt(180000000000000),
-    isStaked: false,
-    stakedAt: null,
-    currentMission: '0xmission1',
-  },
-  {
-    id: '0xagent4',
-    name: 'Echo-∞',
-    agentType: AgentType.AlienSynthetic,
-    class: AgentClass.Psionic,
-    stats: { processing: 40, mobility: 35, power: 20, resilience: 25, luck: 35, neuralBandwidth: 80 },
-    level: 25,
-    experience: 68000,
-    firmwareVersion: 4,
-    aiModelLineage: 'Unknown Origin',
-    augmentSlots: ['0xaug4', '0xaug5', '0xaug6'],
-    maxAugmentSlots: 5,
-    missionsCompleted: 102,
-    battlesWon: 45,
-    totalEarnings: BigInt(520000000000000),
-    isStaked: false,
-    stakedAt: null,
-    currentMission: null,
-  },
-];
 
 const AGENT_CLASSES = [
   { class: AgentClass.Hacker, name: 'Hacker', icon: '💻', description: 'Information warfare specialist' },
@@ -104,11 +26,13 @@ export const AgentsView: React.FC = () => {
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [viewMode, setViewMode] = useState<'roster' | 'recruit'>('roster');
   const [filterClass, setFilterClass] = useState<AgentClass | null>(null);
-  const { mintAgent, trainAgent, stakeAgent, unstakeAgent, startMission } = useMockActions();
+  const { mintAgent, trainAgent, stakeAgent, unstakeAgent, startMission } = useGameActions();
+  const player = useGameStore((s) => s.player);
+  const agents = player?.agents ?? [];
 
   const filteredAgents = filterClass !== null
-    ? DEMO_AGENTS.filter(a => a.class === filterClass)
-    : DEMO_AGENTS;
+    ? agents.filter(a => a.class === filterClass)
+    : agents;
 
   const headerRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
@@ -211,20 +135,20 @@ export const AgentsView: React.FC = () => {
           {/* Agent Stats */}
           <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="stat-card p-3 rounded-lg bg-purple-500/10 border border-purple-500/30" style={{ opacity: 0 }}>
-              <div className="text-2xl font-bold text-purple-400">{DEMO_AGENTS.length}</div>
+              <div className="text-2xl font-bold text-purple-400">{agents.length}</div>
               <div className="text-xs text-slate-400">Total Agents</div>
             </div>
             <div className="stat-card p-3 rounded-lg bg-green-500/10 border border-green-500/30" style={{ opacity: 0 }}>
-              <div className="text-2xl font-bold text-green-400">{DEMO_AGENTS.filter(a => a.isStaked).length}</div>
+              <div className="text-2xl font-bold text-green-400">{agents.filter(a => a.isStaked).length}</div>
               <div className="text-xs text-slate-400">Staked</div>
             </div>
             <div className="stat-card p-3 rounded-lg bg-blue-500/10 border border-blue-500/30" style={{ opacity: 0 }}>
-              <div className="text-2xl font-bold text-blue-400">{DEMO_AGENTS.filter(a => a.currentMission).length}</div>
+              <div className="text-2xl font-bold text-blue-400">{agents.filter(a => a.currentMission).length}</div>
               <div className="text-xs text-slate-400">On Mission</div>
             </div>
             <div className="stat-card p-3 rounded-lg bg-orange-500/10 border border-orange-500/30" style={{ opacity: 0 }}>
               <div className="text-2xl font-bold text-orange-400">
-                {Math.floor(DEMO_AGENTS.reduce((sum, a) => sum + a.level, 0) / DEMO_AGENTS.length)}
+                {agents.length > 0 ? Math.floor(agents.reduce((sum, a) => sum + a.level, 0) / agents.length) : 0}
               </div>
               <div className="text-xs text-slate-400">Avg Level</div>
             </div>
