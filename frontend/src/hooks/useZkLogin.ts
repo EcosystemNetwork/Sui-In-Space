@@ -98,7 +98,6 @@ export function useZkLogin() {
     if (!hash.includes('id_token=')) return;
     completingRef.current = true;
     completeZkLogin();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const beginZkLogin = useCallback(async (provider: 'Google') => {
@@ -169,7 +168,7 @@ export function useZkLogin() {
 
       // Decode JWT
       const decoded = jwtDecode<DecodedJwt>(jwt);
-      const { sub, aud, iss: _iss } = decoded;
+      const { sub, aud } = decoded;
 
       // Fetch salt (dummy for dev)
       const saltResponse = await fetch('/dummy-salt-service.json');
