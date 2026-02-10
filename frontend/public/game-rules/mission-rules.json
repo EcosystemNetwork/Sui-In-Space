@@ -1,0 +1,47 @@
+{
+  "successFormula": {
+    "base": 70,
+    "levelBonusCap": 15,
+    "statBonusCap": 10,
+    "difficultyPenalty": 10,
+    "maxSuccess": 95
+  },
+  "templates": [
+    {
+      "id": "data-heist-1",
+      "name": "Shadow Protocol",
+      "type": "DataHeist",
+      "difficulty": 3,
+      "requirements": { "minLevel": 5, "minProcessing": 20 },
+      "rewards": { "xp": 200, "galactic": 500, "lootChance": 30 },
+      "duration": 2
+    },
+    {
+      "id": "espionage-1",
+      "name": "Ghost Signal",
+      "type": "Espionage",
+      "difficulty": 4,
+      "requirements": { "minLevel": 10, "minProcessing": 30 },
+      "rewards": { "xp": 400, "galactic": 1000, "lootChance": 45 },
+      "duration": 3
+    },
+    {
+      "id": "combat-1",
+      "name": "Asteroid Belt Raid",
+      "type": "Combat",
+      "difficulty": 2,
+      "requirements": { "minLevel": 3, "minProcessing": 10 },
+      "rewards": { "xp": 150, "galactic": 300, "lootChance": 20 },
+      "duration": 1
+    },
+    {
+      "id": "exploration-1",
+      "name": "Deep Void Survey",
+      "type": "Exploration",
+      "difficulty": 1,
+      "requirements": { "minLevel": 1, "minProcessing": 5 },
+      "rewards": { "xp": 100, "galactic": 200, "lootChance": 15 },
+      "duration": 1
+    }
+  ]
+}

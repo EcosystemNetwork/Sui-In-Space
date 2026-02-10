@@ -8,7 +8,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint src/",
-    "test": "vitest"
+    "test": "vitest",
+    "merkle": "tsx scripts/compute-merkle.ts"
   },
   "dependencies": {
     "@mysten/dapp-kit": "^1.0.1",

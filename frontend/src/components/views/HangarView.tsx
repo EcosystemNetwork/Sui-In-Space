@@ -3,7 +3,7 @@ import { animate, stagger } from 'animejs';
 import { ShipCard } from '../ShipCard';
 import type { Ship } from '../../types';
 import { ShipClass } from '../../types';
-import { useMockActions } from '../../hooks/useMockActions';
+import { useGameActions } from '../../hooks/useGameActions';
 
 /**
  * Hangar View Component
@@ -88,7 +88,7 @@ const SHIP_CLASS_BLUEPRINTS = [
 export const HangarView: React.FC = () => {
   const [selectedShip, setSelectedShip] = useState<Ship | null>(null);
   const [viewMode, setViewMode] = useState<'fleet' | 'build'>('fleet');
-  const { buildShip, repairShip, refuelShip, deployShip, recallShip } = useMockActions();
+  const { buildShip, repairShip, refuelShip, deployShip, recallShip } = useGameActions();
 
   const headerRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);

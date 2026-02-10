@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { animate, stagger } from 'animejs';
 import { StationType } from '../../types';
-import { useMockActions } from '../../hooks/useMockActions';
+import { useGameActions } from '../../hooks/useGameActions';
 
 /**
  * DeFi View Component
@@ -123,7 +123,7 @@ const STATION_NAMES: Record<StationType, string> = {
 export const DefiView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'stations' | 'pools' | 'swap'>('stations');
   const [selectedStation, setSelectedStation] = useState<DemoStation | null>(null);
-  const { stake, unstake, claimYield, addLiquidity, removeLiquidity, swap } = useMockActions();
+  const { stake, unstake, claimYield, addLiquidity, removeLiquidity, swap } = useGameActions();
 
   const totalStakedByPlayer = DEMO_STATIONS.reduce((sum, s) => sum + s.playerStake, 0);
   const totalPendingRewards = DEMO_STATIONS.reduce((sum, s) => sum + s.pendingRewards, 0);
